@@ -1,4 +1,4 @@
-# Codex Skills
+# Agents Skills
 
 Personal reusable skills adapted from Gemini for Codex. Each skill is a standalone
 folder with a `SKILL.md` entrypoint, suitable for installation on another machine.
@@ -15,8 +15,8 @@ Requires Python 3.10 or newer. GitHub CLI authentication is required to clone th
 private repository and to use the issue workflows.
 
 ```bash
-gh repo clone Spuntininki/codex-skills
-cd codex-skills
+gh repo clone Spuntininki/agents-skills
+cd agents-skills
 python3 install.py
 ```
 
