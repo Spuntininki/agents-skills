@@ -15,10 +15,11 @@ Break down complex feature ideas or large GitHub issues into small, independent,
 - **Diff Budget Rule**: No individual issue should require more than ~200–300 lines of non-boilerplate code changes or modify more than 3–4 core files.
 - **Vertical Slicing over Horizontal Layers**: Each slice delivers verifiable, testable behavior end-to-end where possible (e.g., Core + Model + Unit Test; then API + Schema; then UI/Consumer). Avoid purely speculative layers that cannot be independently tested or merged.
 - **Micro-PR Mindset**: If an issue requires a database migration, core service logic, API endpoints, worker tasks, and frontend UI, it MUST be split into multiple smaller issues.
-- **Clean Code & Readability Guards**:
-  - Keep functions concise (≤ 20–25 lines), single-responsibility, with low cyclomatic complexity.
-  - Prefer guard clauses and early returns (avoid deep `if/else` nesting).
-  - Ensure high cohesion and self-documenting code with zero redundant comments.
+- **Cohesion over Arbitrary Fragmentation**:
+  - Slicing applies to **issues, features, and PRs**, NOT to artificially chopping up coherent functions.
+  - Do NOT fragment clear, linear functions into artificial micro-helpers just to satisfy an arbitrary line-count metric (this creates fragmented "lasagna / spaghetti" code). A cohesive 30–50 line function that reads clearly top-to-bottom is far superior to multiple shallow one-off helpers.
+  - Keep cyclomatic complexity low using guard clauses and early returns rather than deep `if/else` nesting.
+  - Eliminate redundant comments; let well-named domain concepts speak for themselves.
 
 ## Workflow
 
