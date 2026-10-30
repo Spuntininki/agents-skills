@@ -12,10 +12,10 @@ Break down complex feature ideas or large GitHub issues into small, independent,
 
 ## Guiding Principles
 
-- **Diff Budget Rule**: No individual issue should require more than ~200–300 lines of non-boilerplate code changes or modify more than 3–4 core files.
-- **Vertical Slicing over Horizontal Layers**: Each slice delivers verifiable, testable behavior end-to-end where possible (e.g., Core + Model + Unit Test; then API + Schema; then UI/Consumer). Avoid purely speculative layers that cannot be independently tested or merged.
-- **Micro-PR Mindset**: If an issue requires a database migration, core service logic, API endpoints, worker tasks, and frontend UI, it MUST be split into multiple smaller issues.
-- **Strict Scope Delimitation**: Every slice must explicitly define what is IN scope and what is OUT of scope (deferred to subsequent slices) to prevent scope creep during implementation.
+- **Independently Testable**: Every slice MUST be testable on its own upon implementation. Its scope must be self-contained enough that unit or integration tests prove the new behavior works without requiring unmerged future slices. Never leave untestable or dead-end ghost code.
+- **Single Cohesive Concern**: Each issue addresses exactly one capability, behavior, or architectural step. Focus on doing one thing completely rather than multiple unrelated things halfway.
+- **Diff Budget as a Sizing Guide (≤ 200–300 lines)**: Aim for small, reviewable diffs to keep PR reviews fast and fatigue-free. Do not impose arbitrary file-count limits (a cohesive change that touches models, schemas, routers, and tests is completely natural).
+- **Strict Scope Delimitation**: Every slice must explicitly state what is IN scope and what is OUT of scope (deferred to subsequent slices) to prevent scope creep during implementation.
 
 ## Workflow
 
