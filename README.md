@@ -5,6 +5,7 @@ folder with a `SKILL.md` entrypoint, suitable for installation on another machin
 
 | Skill | Purpose |
 | --- | --- |
+| `slice` | Break down complex features or large issues into micro-issues (≤ 200–300 lines diff budget). |
 | `refine` | Inspect a GitHub issue, align material technical decisions, and update its implementation specification. |
 | `implement` | Implement a GitHub issue, verify the change, and prepare a pull request when publication is authorized. |
 | `english-practice` | Briefly correct English mistakes while continuing the requested task. |
@@ -27,7 +28,7 @@ skill already exists, installation stops before copying anything.
 Install only selected skills or choose a different destination:
 
 ```bash
-python3 install.py refine implement
+python3 install.py slice refine implement
 python3 install.py --dest /path/to/codex/skills
 ```
 
@@ -37,6 +38,8 @@ refresh the skill list, start a new chat or restart the client.
 ## Use
 
 ```text
+$slice https://github.com/OWNER/REPO/issues/12
+$slice Add user notification preference and email alerts
 $refine https://github.com/OWNER/REPO/issues/12
 $implement https://github.com/OWNER/REPO/issues/12
 $english-practice Please correct my English while we work.

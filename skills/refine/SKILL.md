@@ -24,7 +24,7 @@ Before proposing solutions, analyze:
 - **Data Model & Schema Impact**: Changes to tables, columns, constraints, migrations, or indexes (ensuring JIT schema evolution).
 - **External Dependencies**: New libraries or APIs needed (checking exact versions and pinning rules).
 - **Edge Cases & Failure Modes**: Network timeouts, provider rate limits, partial failures, deduplication, concurrency.
-- **Scope Boundaries**: What belongs to this issue vs. what should be postponed to future milestones.
+- **Diff Budget & Scope Boundaries**: Evaluate estimated diff size. If the implementation will exceed ~200–300 lines of code changes or spans multiple distinct layers (e.g., DB + API + Worker + UI), advise running `/slice <issue-number>` to decompose it into micro-issues before implementing.
 
 ### 3. Developer Consultation & Decision Alignment
 - Present key decisions to the developer clearly and concisely.
