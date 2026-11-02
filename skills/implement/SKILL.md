@@ -33,6 +33,7 @@ Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
    - **Zero Redundant Comments**: Code must be self-documenting. Reserve comments strictly for non-obvious business rules or safety constraints.
    - **Meaningful Tests (No Vanity Tests)**: Never write tautological tests that test nothing. Cover real edge cases, state invariants, and failure paths. Refactor existing test tables rather than appending redundant tests; eliminate dead test code ruthlessly.
    - **Architecture & Boundaries**: Follow the repository's native architectural style (e.g. Hexagonal, Clean, MVC, Feature-based).
+   - **Pinned & Verified Dependencies**: When introducing any new library, verify its real, official, and stable release (via package manager CLI or registry query). Pin the exact verified version in the installation/manifest file (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`). Never hallucinate version numbers or use floating/unpinned tags (`*`, `latest`).
    - **Concurrency & Safety**: Context propagation on all I/O; proper synchronization on shared mutable state.
    - **Errors & Logs**: Use idiomatic sentinel/domain errors and structured logging. Never use raw prints for runtime logs.
 
