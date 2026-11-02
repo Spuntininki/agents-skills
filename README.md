@@ -5,8 +5,8 @@ folder with a `SKILL.md` entrypoint, suitable for installation on another machin
 
 | Skill | Purpose |
 | --- | --- |
-| `orchestrate` | Supervise multi-issue epics using isolated git worktrees, iterative feedback loops, and executors. |
-| `slice` | Break down complex features or large issues into micro-issues (≤ 200–300 lines diff budget). |
+| `orchestrate` | Supervise multi-issue epics using isolated git worktrees, concurrent subagents for parallel slices, and an integration branch. |
+| `slice` | Break down complex features or issues into independent, vertically sliced micro-issues with parallel/serial execution modes. |
 | `refine` | Inspect a GitHub issue, align material technical decisions, and update its implementation specification. |
 | `implement` | Implement a GitHub issue, verify the change, and prepare a pull request when publication is authorized. |
 | `english-practice` | Briefly correct English mistakes while continuing the requested task. |

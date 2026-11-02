@@ -24,7 +24,7 @@ Before proposing solutions, analyze:
 - **Data Model & Schema Impact**: Changes to tables, columns, constraints, migrations, or indexes (ensuring JIT schema evolution).
 - **External Dependencies**: New libraries or APIs needed (checking exact versions and pinning rules).
 - **Edge Cases & Failure Modes**: Network timeouts, provider rate limits, partial failures, deduplication, concurrency.
-- **Diff Budget & Scope Boundaries**: Evaluate estimated diff size. If the implementation will exceed ~200–300 lines of code changes or spans multiple distinct layers (e.g., DB + API + Worker + UI), advise running `/slice <issue-number>` to decompose it into micro-issues before implementing.
+- **Cohesion & Slicing Viability**: Assess whether the issue contains multiple independent, separable capabilities. If it bundles multiple decoupled concerns that satisfy the 3 Independence Criteria (independent testability, zero cascading rework, autonomous reviewability), advise running `/slice <issue-number>` to decompose it. If it is a single cohesive capability (even if it touches models + API + tests together), **keep it unified** to avoid artificial coupling.
 
 ### 3. Developer Consultation & Decision Alignment
 - Present key decisions to the developer clearly and concisely.
@@ -66,4 +66,4 @@ When this skill is invoked to refine an issue, updating that issue with the resu
 
 ### 5. Ready for Implementation
 - Confirm the issue is updated and ready.
-- Suggest running `$implement <issue-number>` as the next step.
+- Suggest running `/implement <issue-number>` as the next step.
