@@ -3,67 +3,39 @@ name: refine
 description: >-
   Refines a GitHub issue before implementation by analyzing the codebase,
   identifying architectural trade-offs, consulting the user for decisions,
-  and updating the issue with concrete technical specs.
+  and updating the issue with technical specs.
 ---
 
-# Refine
+# /refine
 
-Interactively clarify architecture, trade-offs, and specifications for a GitHub issue before writing code, giving the developer full control over technical decisions.
+Clarify architecture, trade-offs, and technical specs for an issue before writing code.
 
 ## Workflow
 
-### 1. Context & Codebase Inspection
-- Fetch the issue via `gh issue view <issue-number>`.
-- Read repository rules (e.g., `AGENTS.md`, `PLAN.md`, architectural guidelines).
-- Inspect related code, models, schemas, and endpoints to understand existing patterns and constraints.
-- Verify existing tests and fixtures related to the feature or bug.
+1. **Inspection & Slicing Viability**:
+   - Fetch issue: `gh issue view <issue-number>`. Inspect related code, models, and existing tests.
+   - **Cohesion Check**: If the issue bundles multiple independent capabilities that can be separately developed and tested, advise running `/slice <issue-number>`. If it is a single cohesive capability (even spanning models + API + tests), keep it unified.
 
-### 2. Identify Technical Fork Points
-Before proposing solutions, analyze:
-- **Architectural & Design Choices**: Alternative implementation approaches with clear pros and cons.
-- **Data Model & Schema Impact**: Changes to tables, columns, constraints, migrations, or indexes (ensuring JIT schema evolution).
-- **External Dependencies**: New libraries or APIs needed (checking exact versions and pinning rules).
-- **Edge Cases & Failure Modes**: Network timeouts, provider rate limits, partial failures, deduplication, concurrency.
-- **Cohesion & Slicing Viability**: Assess whether the issue contains multiple independent, separable capabilities. If it bundles multiple decoupled concerns that satisfy the 3 Independence Criteria (independent testability, zero cascading rework, autonomous reviewability), advise running `/slice <issue-number>` to decompose it. If it is a single cohesive capability (even if it touches models + API + tests together), **keep it unified** to avoid artificial coupling.
+2. **Map Technical Fork Points**:
+   - Identify concrete trade-offs: architectural patterns, schema/migration changes, external dependencies, failure modes, and concurrency concerns.
 
-### 3. Developer Consultation & Decision Alignment
-- Present key decisions to the developer clearly and concisely.
-- For each open decision:
-  - Explain the problem or trade-off briefly.
-  - Provide concrete options (e.g., Option A vs. Option B) with trade-offs.
-  - Recommend an option if appropriate, but wait for the developer's confirmation when the decision materially affects scope, architecture, or user-facing behavior and is not already settled by the request or repository rules. Resolve routine implementation details using existing conventions.
-- Ask clarifying questions about user-facing behavior, error messages, or business rules.
+3. **Developer Consultation**:
+   - Present open decisions with concrete options (Option A vs Option B) and trade-offs. Recommend an option and wait for developer confirmation on architectural or scope decisions.
 
-### 4. Enrich the GitHub Issue
-When this skill is invoked to refine an issue, updating that issue with the resulting specifications is part of the requested workflow. Once decisions are aligned with the developer, update the GitHub issue (using `gh issue edit <issue-number> --body-file <file>` or posting a detailed comment with `--body-file <file>`) using this structured format:
+4. **Enrich Issue Specification**:
+   - Update issue body (`gh issue edit <issue-number> --body ...` or comment) with confirmed specs:
+     ```markdown
+     ## 📐 Technical Decisions & Architecture Plan
+     - **Confirmed Decisions**: <What was decided and rationale>
+     - **Schema / Data Changes**: <Migrations, tables, or 'None'>
 
-```markdown
-## 📐 Technical Decisions & Architecture Plan
+     ### 🛠️ Implementation Plan
+     1. [`file-or-module`](path): <Specific change>
 
-### Context & Scope
-<Concise problem statement and confirmed scope boundaries>
+     ### 🧪 Test Strategy & Acceptance Criteria
+     - **Tests**: <Edge cases and integration flows>
+     - [ ] <Concrete acceptance criterion 1>
+     - [ ] <Concrete acceptance criterion 2>
+     ```
 
-### Confirmed Technical Decisions
-- **Decision 1**: <What was decided and rationale>
-- **Decision 2**: <What was decided and rationale>
-
-### 🗄️ Schema & Data Model Changes
-- <Tables, migrations, constraints, or 'None'>
-
-### 🛠️ Implementation Plan
-1. [`file-or-module`](path): <Specific change>
-2. [`file-or-module`](path): <Specific change>
-
-### 🧪 Test & Verification Strategy
-- **Unit Tests**: <Specific edge cases and fixtures to test>
-- **Integration Tests**: <Flows to test>
-- **Command**: `make test` / `make lint`
-
-### ✅ Acceptance Criteria
-- [ ] <Specific criterion>
-- [ ] <Specific criterion>
-```
-
-### 5. Ready for Implementation
-- Confirm the issue is updated and ready.
-- Suggest running `/implement <issue-number>` as the next step.
+5. **Next Step**: Confirm readiness and recommend `/implement <issue-number>`.
