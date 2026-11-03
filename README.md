@@ -9,6 +9,7 @@ folder with a `SKILL.md` entrypoint, suitable for installation on another machin
 | `slice` | Break down complex features or issues into independent, vertically sliced micro-issues with parallel/serial execution modes. |
 | `refine` | Inspect a GitHub issue, align material technical decisions, and update its implementation specification. |
 | `implement` | Implement a GitHub issue, verify the change, and prepare a pull request when publication is authorized. |
+| `explore` | Explore an unfamiliar repository and generate a guided cognitive reading path, architectural map, and hotspots. |
 | `english-practice` | Briefly correct English mistakes while continuing the requested task. |
 
 ## Install
@@ -39,6 +40,7 @@ refresh the skill list, start a new chat or restart the client.
 ## Use
 
 ```text
+$explore .
 $orchestrate https://github.com/OWNER/REPO/issues/18
 $slice https://github.com/OWNER/REPO/issues/12
 $slice Add user notification preference and email alerts
