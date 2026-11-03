@@ -12,8 +12,12 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
 
 ## Workflow
 
-1. **Init Epic Branch**:
-   - Fetch parent issue: `gh issue view <epic-number>`.
+1. **Init Epic Branch & Milestone**:
+   - Fetch parent issue and milestone:
+     ```bash
+     gh issue view <epic-number> --json title,body,milestone
+     MILESTONE=$(gh issue view <epic-number> --json milestone -q .milestone.title 2>/dev/null || echo "")
+     ```
    - Ensure integration branch `epic/issue-<epic-number>-<slug>` exists on remote (branched from `origin/main`), then fetch it locally.
 
 2. **Identify Unblocked Slices**:
@@ -28,7 +32,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      git worktree add .worktrees/issue-<id> -b feat/issue-<id>-<slug> origin/epic/issue-<epic-number>-<slug>
      ```
    - Dispatch executor subagent into `.worktrees/issue-<id>`:
-     > "Implement issue `#<id>` using `/implement <id>`. You are in an isolated worktree on the feature branch. Submit PR targeting: `gh pr create --base epic/issue-<epic-number>-<slug>`."
+     > "Implement issue `#<id>` using `/implement <id>`. You are in an isolated worktree on the feature branch. Submit PR targeting: `gh pr create --base epic/issue-<epic-number>-<slug> ${MILESTONE:+-m \"$MILESTONE\"}`."
 
 4. **Review, Sync & Merge (Asynchronous Loop)**:
    - When an executor opens a PR: verify locally in `.worktrees/issue-<id>` (`make test`, `make lint`, diff review).
@@ -51,6 +55,11 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
 6. **Release Gate**:
    - When all slices are `[x]`, open final release PR:
      ```bash
-     gh pr create --base main --head epic/issue-<epic-number>-<slug> --title "feat: <epic-title>" --body "Closes #<epic-number>"
+     gh pr create --base main --head epic/issue-<epic-number>-<slug> ${MILESTONE:+-m "$MILESTONE"} --title "feat: <epic-title>" --body "Closes #<epic-number>"
      ```
-   - Once merged into `main`, CD triggers once for atomic deployment. Close Epic and delete remote epic branch.
+   - Once merged into `main`, CD triggers once for atomic deployment. Close Epic, delete remote epic branch, and close Milestone if complete:
+     ```bash
+     if [ -n "$MILESTONE" ]; then
+       gh api repos/:owner/:repo/milestones/$(gh api repos/:owner/:repo/milestones -q ".[] | select(.title==\"$MILESTONE\") | .number") -X PATCH -f state=closed 2>/dev/null || true
+     fi
+     ```

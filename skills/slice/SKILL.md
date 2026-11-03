@@ -28,12 +28,20 @@ Decompose features or large issues into independent, vertically sliced micro-iss
    - Specify: Title (`type(scope): summary`), Mode (`Parallel ⚡` vs `Serial 🔒`), Dependencies (`#prev` or `None`), Target File Boundaries, Scope (IN/OUT), and Acceptance Criteria.
    - Confirm breakdown with developer before creating issues.
 
-3. **Create Issues**:
-   - If parent Epic issue does not exist, create it: `gh issue create --title "feat(scope): <title>" ...`.
-   - Create child issues with `gh issue create`:
+3. **Create Milestone & Issues**:
+   - Ensure a GitHub Milestone exists for unified human progress tracking:
+     ```bash
+     gh api repos/:owner/:repo/milestones -f title="<epic-title>" 2>/dev/null || true
+     ```
+   - If parent Epic issue does not exist, create it with milestone association:
+     ```bash
+     gh issue create --title "feat(scope): <title>" -m "<epic-title>" ...
+     ```
+   - Create child issues with `gh issue create -m "<epic-title>"`:
      ```markdown
      ## 🎯 Context
      Part of Epic #<parent-number>
+     - **Milestone**: `<epic-title>`
      - **Integration Branch**: `epic/issue-<parent-number>-<slug>`
      - **Execution Mode**: ⚡ `Parallel` <!-- or 🔒 `Serial` -->
      - **Dependencies**: #<previous> <!-- or "None" -->
@@ -49,8 +57,9 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      ```
    - Update parent Epic body with the phase checklist:
      ```markdown
-     ## 🌿 Integration Branch
-     `epic/issue-<parent-number>-<slug>`
+     ## 🌿 Integration Branch & Milestone
+     - **Branch**: `epic/issue-<parent-number>-<slug>`
+     - **Milestone**: `<epic-title>`
 
      ## 🗺️ Execution Plan & Progress
      ### Phase 1: Foundation (Serial 🔒)
@@ -64,4 +73,4 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      - [ ] 3. #<id> `<title>` (Mode: Serial | Depends on: #2A, #2B)
      ```
 
-4. **Next Steps**: Link created issues and recommend `/orchestrate <parent-number>`.
+4. **Next Steps**: Link created issues, Milestone dashboard, and recommend `/orchestrate <parent-number>`.

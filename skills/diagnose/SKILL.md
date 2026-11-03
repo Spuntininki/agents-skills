@@ -56,11 +56,17 @@ Evaluate the subagent's RCA report:
   - `Serial 🔒`: Dependent bug(s) requiring a specific order of execution.
 
 ### 4. Create GitHub Bug Issue(s)
-For each distinct bug, create a GitHub issue using `gh`:
+For each distinct bug, inherit the parent Epic's milestone (if `--epic` was provided) and create the issue:
 ```bash
+MILESTONE=""
+if [ -n "<epic-id>" ]; then
+  MILESTONE=$(gh issue view <epic-id> --json milestone -q .milestone.title 2>/dev/null || echo "")
+fi
+
 gh issue create \
   --title "fix: <concise, descriptive bug title>" \
   --label "bug" \
+  ${MILESTONE:+-m "$MILESTONE"} \
   --body "$(cat << 'EOF'
 ## 🎯 Observed Symptom
 <What happens, error logs, or failing test output>

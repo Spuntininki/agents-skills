@@ -43,9 +43,13 @@ Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
 
 6. **Pull Request**:
    - Push branch to remote.
+   - Inherit milestone if the issue has one:
+     ```bash
+     MILESTONE=$(gh issue view <issue-number> --json milestone -q .milestone.title 2>/dev/null || echo "")
+     ```
    - Run `gh pr create`:
-     - If part of an Epic: `gh pr create --base <integration-branch>`
-     - If standalone: `gh pr create --base main`
+     - If part of an Epic: `gh pr create --base <integration-branch> ${MILESTONE:+-m "$MILESTONE"}`
+     - If standalone: `gh pr create --base main ${MILESTONE:+-m "$MILESTONE"}`
    - Adapt the template below dynamically to match the project's real stack and architecture (do not force non-existent layers or irrelevant commands):
 
 ```markdown
