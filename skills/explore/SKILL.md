@@ -15,7 +15,7 @@ Instead of browsing file trees alphabetically, this skill extracts Git forensics
 
 - **Cognitive Dependency First**: Never order files alphabetically or by directory nesting. Order files by conceptual prerequisite: Domain Entities & Contracts $\rightarrow$ Storage / State $\rightarrow$ Core Services / Use Cases $\rightarrow$ Entrypoints / HTTP Handlers $\rightarrow$ Living E2E Tests.
 - **Spotlight the Beating Heart**: Ruthlessly filter out boilerplate, vendor packages, lockfiles, and generated code. Focus on the 5–10 files that embody the business logic and architectural invariants.
-- **Interactive Artifact**: Always present the tour as an Antigravity Markdown Artifact containing clickable file links with line ranges, a Mermaid request lifecycle diagram, and high-risk hotspots.
+- **Portable Markdown Artifact**: Present the tour as a structured, standalone Markdown document or UI artifact (via the harness's native artifact mechanism, sidecar canvas, or written to a dedicated `TOUR.md`) using standard GitHub-Flavored Markdown (GFM), Mermaid diagrams, and portable file links (`[path#L1-L40](path/to/file#L1-L40)`).
 
 ---
 
@@ -34,8 +34,8 @@ Using the output from Step 1:
 - Inspect 2–3 primary domain models/schemas to identify the central business entities.
 - Trace one canonical request/event flow end-to-end (from HTTP/CLI handler $\rightarrow$ service logic $\rightarrow$ persistence/external I/O).
 
-### 3. Generate the Cognitive Tour Artifact
-Create a dedicated Markdown Artifact titled `🧭 Guided Cognitive Tour: <Repo Name>`:
+### 3. Generate the Cognitive Tour Document / Artifact
+Output the guide using the harness's native artifact mechanism (or write to `TOUR.md` / artifact directory) formatted in standard GitHub-Flavored Markdown with Mermaid:
 
 ```markdown
 # 🧭 Guided Cognitive Tour: [Repository Name]
@@ -46,11 +46,11 @@ Create a dedicated Markdown Artifact titled `🧭 Guided Cognitive Tour: <Repo N
 ## 🗺️ Recommended Cognitive Reading Path
 *Read in this exact sequence to build a complete mental model without cognitive overload:*
 
-1. [`path/to/entity.ext#L1-L40`](link) — **Core Domain Entity**: <Why to read first. Key business invariants and states.>
-2. [`path/to/repository.ext#L15-L60`](link) — **State & Persistence**: <How state is stored and retrieved.>
-3. [`path/to/service.ext#L20-L80`](link) — **Core Business Logic**: <The primary use case algorithm or rule engine.>
-4. [`path/to/handler.ext#L1-L50`](link) — **Ingress & Transport**: <How incoming requests are validated and dispatched.>
-5. [`path/to/e2e_test.ext#L1-L60`](link) — **Living Specification**: <The test demonstrating the happy path end-to-end.>
+1. [`path/to/entity.ext#L1-L40`](path/to/entity.ext#L1-L40) — **Core Domain Entity**: <Why to read first. Key business invariants and states.>
+2. [`path/to/repository.ext#L15-L60`](path/to/repository.ext#L15-L60) — **State & Persistence**: <How state is stored and retrieved.>
+3. [`path/to/service.ext#L20-L80`](path/to/service.ext#L20-L80) — **Core Business Logic**: <The primary use case algorithm or rule engine.>
+4. [`path/to/handler.ext#L1-L50`](path/to/handler.ext#L1-L50) — **Ingress & Transport**: <How incoming requests are validated and dispatched.>
+5. [`path/to/e2e_test.ext#L1-L60`](path/to/e2e_test.ext#L1-L60) — **Living Specification**: <The test demonstrating the happy path end-to-end.>
 
 ## ⚡ The Life of a Request
 ```mermaid
