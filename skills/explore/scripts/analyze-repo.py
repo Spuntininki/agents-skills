@@ -191,14 +191,23 @@ def find_entrypoints(repo_dir: Path, subpath: Path = None) -> list:
 
 def git_churn_hotspots(repo_dir: Path, subpath: Path = None, max_commits: int = 200, since: str = None) -> dict:
     """Analyze commit frequency per file and aggregate by component/directory."""
+    git_root_raw = run_git(repo_dir, "rev-parse", "--show-toplevel")
+    git_root = Path(git_root_raw) if git_root_raw else repo_dir
+    target_scope = (repo_dir / subpath).resolve() if subpath else repo_dir.resolve()
+
     git_args = ["log", f"-n{max_commits}", "--format=", "--name-only"]
     if since:
         git_args.append(f"--since={since}")
 
-    if subpath:
-        git_args.extend(["--", str(subpath)])
+    # Scope git log to target_scope relative to git_root
+    if target_scope != git_root:
+        try:
+            rel_scope = target_scope.relative_to(git_root)
+            git_args.extend(["--", str(rel_scope)])
+        except ValueError:
+            pass
 
-    raw = run_git(repo_dir, *git_args)
+    raw = run_git(git_root, *git_args)
     if not raw:
         return {"file_hotspots": [], "component_hotspots": []}
 
@@ -215,14 +224,19 @@ def git_churn_hotspots(repo_dir: Path, subpath: Path = None, max_commits: int = 
         if any(ign in p.parts for ign in IGNORED_PATHS):
             continue
 
-        full_path = repo_dir / p
+        full_path = git_root / p
         if full_path.is_file():
-            rel_str = str(p)
-            file_counter[rel_str] += 1
-            # Group by top 2 directory levels (e.g. backend/internal/practice)
-            parts = p.parts
-            if len(parts) >= 2:
-                comp = "/".join(parts[:2]) if len(parts) == 2 else "/".join(parts[:3])
+            try:
+                display_rel = str(full_path.relative_to(repo_dir))
+            except ValueError:
+                display_rel = str(p)
+
+            file_counter[display_rel] += 1
+
+            # Group by top 2 directory levels
+            rel_parts = Path(display_rel).parts
+            if len(rel_parts) >= 2:
+                comp = "/".join(rel_parts[:2]) if len(rel_parts) == 2 else "/".join(rel_parts[:3])
                 comp_counter[comp] += 1
 
     file_hotspots = [{"file": path, "changes": count} for path, count in file_counter.most_common(12)]
