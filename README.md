@@ -1,68 +1,93 @@
 # Agents Skills
 
-Personal reusable skills adapted from Gemini for Codex. Each skill is a standalone
-folder with a `SKILL.md` entrypoint, suitable for installation on another machine.
+Universal, production-ready agent skills for autonomous AI coding assistants (Antigravity, Claude Code, Codex, Cursor, and Agent Skill standard-compliant harnesses).
+
+Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable scripts, and zero unnecessary dependencies.
 
 | Skill | Purpose |
 | --- | --- |
-| `orchestrate` | Supervise multi-issue epics using isolated git worktrees, concurrent subagents for parallel slices, and an integration branch. |
-| `slice` | Break down complex features or issues into independent, vertically sliced micro-issues with parallel/serial execution modes. |
-| `refine` | Inspect a GitHub issue, align material technical decisions, and update its implementation specification. |
-| `implement` | Implement a GitHub issue, verify the change, and prepare a pull request when publication is authorized. |
-| `explore` | Explore an unfamiliar repository and generate a guided cognitive reading path, architectural map, and hotspots. |
-| `english-practice` | Briefly correct English mistakes while continuing the requested task. |
+| `explore` | Onboard onto unfamiliar codebases with a guided cognitive reading path, architectural map, and Git churn hotspots. |
+| `slice` | Decompose complex features into independent, vertically sliced micro-issues with parallel/serial execution modes. |
+| `orchestrate` | Supervise multi-issue epics using isolated Git worktrees, concurrent subagents for parallel slices, and an Epic Integration Branch. |
+| `refine` | Interactively inspect an issue, align material technical decisions, and enrich implementation specifications. |
+| `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
+| `english-practice` | Maintain language practice with concise, non-disruptive inline corrections while continuing technical tasks. |
 
-## Install
+---
 
-Requires Python 3.10 or newer. GitHub CLI authentication is required to clone this
-private repository and to use the issue workflows.
+## Installation
+
+Requires Python 3.10+. The installer supports auto-detection, multi-harness presets, symlinking, and safe upgrades:
 
 ```bash
-gh repo clone Spuntininki/agents-skills
+git clone https://github.com/Spuntininki/agents-skills.git
 cd agents-skills
+
+# Auto-detects installed harness and installs all skills
 python3 install.py
 ```
 
-The installer copies all skills into `$CODEX_HOME/skills`, or `~/.codex/skills`
-when `CODEX_HOME` is unset. It never overwrites an existing skill. If any selected
-skill already exists, installation stops before copying anything.
+### Target Presets
 
-Install only selected skills or choose a different destination:
+Install to a specific agent harness environment:
 
 ```bash
-python3 install.py orchestrate slice refine implement
-python3 install.py --dest /path/to/codex/skills
+python3 install.py --target antigravity   # ~/.gemini/config/skills
+python3 install.py --target claude        # ~/.claude/skills
+python3 install.py --target codex         # ~/.codex/skills
+python3 install.py --target workspace     # ./.agents/skills (current project)
+python3 install.py --dest /custom/path    # Any custom directory
 ```
 
-Installed skills are available on the next Codex turn. If the client does not
-refresh the skill list, start a new chat or restart the client.
+### Useful Options
 
-## Use
+```bash
+# Upgrade existing installations without manual deletion
+python3 install.py --overwrite
+
+# Symlink skills instead of copying (ideal for active skill development)
+python3 install.py --symlink
+
+# Install only selected skills
+python3 install.py explore slice orchestrate
+
+# List available skills with descriptions
+python3 install.py --list
+```
+
+Installed skills become available on the agent's next turn or session restart.
+
+---
+
+## Usage
+
+Trigger skills via slash commands (`/` or `$`, depending on your harness UI):
 
 ```text
-$explore .
-$orchestrate https://github.com/OWNER/REPO/issues/18
-$slice https://github.com/OWNER/REPO/issues/12
-$slice Add user notification preference and email alerts
-$refine https://github.com/OWNER/REPO/issues/12
-$implement https://github.com/OWNER/REPO/issues/12
-$english-practice Please correct my English while we work.
+/explore .
+/explore /path/to/unfamiliar-repo
+/slice Add user notification preference and email alerts
+/slice https://github.com/OWNER/REPO/issues/12
+/orchestrate https://github.com/OWNER/REPO/issues/18
+/refine https://github.com/OWNER/REPO/issues/12
+/implement https://github.com/OWNER/REPO/issues/12
+/english-practice Please correct my English while we work.
 ```
 
-Skills can also be selected automatically when the request matches their description.
-Repository rules and explicit user instructions take precedence. The `implement`
-skill preserves commit/push authorization requirements; installation does not
-publish code or grant permissions for future tasks.
+Skills are also selected automatically by the agent's router when a user prompt matches their purpose.
 
-## Update
+---
 
-Pull changes in this clone, review the diff, and back up or move the installed
-skill directories you want to replace before running the installer again.
-Editing an installed copy does not automatically update this repository.
+## Contributing & Adding Skills
 
-## Add a skill
+Create a new folder under `skills/<name>/SKILL.md` with YAML frontmatter:
 
-Add `skills/<name>/SKILL.md` with YAML frontmatter containing `name` and
-`description`. Keep supporting scripts, references, and assets inside that folder.
-Use English for documentation and instructions. Never include credentials, local
-account configuration, or private project data.
+```yaml
+---
+name: skill-name
+description: >-
+  Concise summary of what the skill does and when to activate it.
+---
+```
+
+Place helper scripts inside `skills/<name>/scripts/`. Keep skills client-agnostic, portable, and free of hardcoded paths or credentials.
