@@ -26,15 +26,48 @@ Instead of browsing file trees alphabetically, this skill extracts Git forensics
 ## Workflow
 
 ### 1. Automated Forensics
-Run the automated repo analyzer script:
+
+> [!NOTE]
+> **Do NOT view or read `analyze-repo.py` source code**. It is a pre-packaged, zero-dependency forensics utility. Execute it directly and consume its stdout JSON.
+
+**Execution:**
 ```bash
-python3 <skill-dir>/scripts/analyze-repo.py .
+python3 <skill-dir>/scripts/analyze-repo.py [target-dir] [options]
 ```
 
-**Advanced options for focused exploration:**
-- Focus on a specific subsystem or monorepo package: `python3 <skill-dir>/scripts/analyze-repo.py . --subpath backend`
-- Time-bounded commit churn: `python3 <skill-dir>/scripts/analyze-repo.py . --since "3 months ago"`
-- Quick human-readable terminal summary: `python3 <skill-dir>/scripts/analyze-repo.py . --format text`
+**CLI Flags & Usage:**
+- `target-dir`: Path to repository (default: `.`).
+- `--subpath <dir>`: Scopes analysis to a subsystem or package in a monorepo (e.g. `--subpath backend`).
+- `--since "<date>"`: Time window for commit churn (e.g. `--since "3 months ago"`).
+- `--max-commits <N>`: Maximum commits to inspect for churn (default: `200`).
+- `--format json|text`: Output format (default: `json`). Always keep `json` for automated agent consumption.
+
+**Output Schema Contract:**
+```json
+{
+  "stack_and_architecture": {
+    "technologies": ["Go", "PostgreSQL", "Kafka"],
+    "architectural_style": ["Event-Driven (EDA)", "Clean/Hexagonal"],
+    "manifests": ["go.mod", "docker-compose.yml"]
+  },
+  "entrypoints": [
+    "cmd/server/main.go",
+    "internal/workers/payment_worker.go",
+    "internal/consumers/order_consumer.go"
+  ],
+  "git_hotspots": {
+    "file_hotspots": [{"file": "internal/domain/order.go", "changes": 18}],
+    "component_hotspots": [{"component": "internal/domain", "changes": 42}]
+  },
+  "domain_and_event_candidates": [
+    "internal/domain/order.go",
+    "proto/events/order_created.proto"
+  ],
+  "living_tests": [
+    "tests/e2e/order_lifecycle_test.go"
+  ]
+}
+```
 
 ### 2. Inspect the Domain Core & Primary Flow
 Using the output from Step 1:

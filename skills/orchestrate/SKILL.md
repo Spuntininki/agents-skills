@@ -44,7 +44,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      ```
 
 5. **Cleanup & Advance**:
-   - Remove finished worktree: `git worktree remove .worktrees/issue-<id> --force && git branch -D feat/issue-<id>-<slug> 2>/dev/null || true`.
+   - Remove finished worktree: `git worktree remove .worktrees/issue-<id> --force && git branch -D feat/issue-<id>-<slug> 2>/dev/null || true` (or run `<skill-dir>/scripts/cleanup-worktrees.sh` to batch-prune all merged worktrees without reading its source).
    - Update parent Epic checklist: mark completed slice `- [x] ... #<id>`.
    - If pending slices remain, return to **Step 2**.
 
