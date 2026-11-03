@@ -11,6 +11,7 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 | `orchestrate` | Supervise multi-issue epics using isolated Git worktrees, concurrent subagents for parallel slices, and an Epic Integration Branch. |
 | `refine` | Interactively inspect an issue, align material technical decisions, and enrich implementation specifications. |
 | `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
+| `diagnose` | Perform Root Cause Analysis (RCA) via isolated subagent, create GitHub bug issue(s), and register in Epics for orchestration. |
 | `english-practice` | Maintain language practice with concise, non-disruptive inline corrections while continuing technical tasks. |
 
 ---
@@ -71,6 +72,7 @@ Trigger skills via slash commands (`/` or `$`, depending on your harness UI):
 /orchestrate https://github.com/OWNER/REPO/issues/18
 /refine https://github.com/OWNER/REPO/issues/12
 /implement https://github.com/OWNER/REPO/issues/12
+/diagnose "Worker fails with deadlock when processing batch refund events" --epic 18
 /english-practice Please correct my English while we work.
 ```
 
