@@ -19,12 +19,14 @@ import sys
 IGNORED_EXTENSIONS = {
     ".lock", ".sum", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2",
     ".ttf", ".eot", ".map", ".min.js", ".min.css", ".tar", ".gz", ".zip", ".bin",
-    ".db", ".sqlite", ".pbtxt", ".log", ".csv", ".pdf"
+    ".db", ".sqlite", ".pbtxt", ".log", ".csv", ".pdf", ".class", ".jar", ".war",
+    ".dll", ".pdb", ".exe", ".beam", ".so", ".dylib"
 }
 
 IGNORED_PATHS = {
-    ".git", ".worktrees", "node_modules", "vendor", "dist", "build", ".cache",
-    ".idea", ".vscode", "tmp", "coverage", ".next", "out"
+    ".git", ".worktrees", "node_modules", "vendor", "dist", "build", "target",
+    "bin", "obj", ".gradle", ".cache", ".idea", ".vscode", "tmp", "coverage",
+    ".next", "out", "_build", "deps", ".elixir_ls"
 }
 
 
@@ -43,6 +45,15 @@ def run_git(repo_dir: Path, *args: str) -> str:
         return ""
 
 
+def is_ignored(path: Path, repo_dir: Path) -> bool:
+    """Check if path relative to repo_dir touches an ignored directory."""
+    try:
+        parts = path.resolve().relative_to(repo_dir.resolve()).parts
+    except ValueError:
+        parts = path.parts
+    return any(ign in parts for ign in IGNORED_PATHS)
+
+
 def detect_stack_and_architecture(repo_dir: Path, subpath: Path = None) -> dict:
     """Detect technologies, frameworks, and architectural style cues."""
     search_root = (repo_dir / subpath) if subpath else repo_dir
@@ -52,7 +63,7 @@ def detect_stack_and_architecture(repo_dir: Path, subpath: Path = None) -> dict:
 
     # Go
     for p in search_root.glob("**/go.mod"):
-        if any(ign in p.parts for ign in IGNORED_PATHS):
+        if is_ignored(p, repo_dir):
             continue
         manifests.append(str(p.relative_to(repo_dir)))
         content = p.read_text(errors="ignore").lower()
@@ -76,7 +87,7 @@ def detect_stack_and_architecture(repo_dir: Path, subpath: Path = None) -> dict:
 
     # Node / JS / TS
     for p in search_root.glob("**/package.json"):
-        if any(ign in p.parts for ign in IGNORED_PATHS):
+        if is_ignored(p, repo_dir):
             continue
         manifests.append(str(p.relative_to(repo_dir)))
         try:
@@ -102,7 +113,7 @@ def detect_stack_and_architecture(repo_dir: Path, subpath: Path = None) -> dict:
     # Python
     py_files = list(search_root.glob("**/pyproject.toml")) + list(search_root.glob("**/requirements.txt"))
     for p in py_files:
-        if any(ign in p.parts for ign in IGNORED_PATHS):
+        if is_ignored(p, repo_dir):
             continue
         manifests.append(str(p.relative_to(repo_dir)))
         if "Python" not in stack:
@@ -118,14 +129,116 @@ def detect_stack_and_architecture(repo_dir: Path, subpath: Path = None) -> dict:
 
     # Rust
     for p in search_root.glob("**/Cargo.toml"):
-        if any(ign in p.parts for ign in IGNORED_PATHS):
+        if is_ignored(p, repo_dir):
             continue
         manifests.append(str(p.relative_to(repo_dir)))
         if "Rust (Cargo)" not in stack:
             stack.append("Rust (Cargo)")
 
+    # Java / Kotlin (Maven & Gradle)
+    jvm_manifests = list(search_root.glob("**/pom.xml")) + list(search_root.glob("**/build.gradle*"))
+    for p in jvm_manifests:
+        if is_ignored(p, repo_dir):
+            continue
+        manifests.append(str(p.relative_to(repo_dir)))
+        content = p.read_text(errors="ignore").lower()
+        is_gradle = "gradle" in p.name
+        lang = "Kotlin/Java (Gradle)" if is_gradle else "Java (Maven)"
+        if lang not in stack:
+            stack.append(lang)
+        if "spring-boot" in content or "springframework.boot" in content:
+            if "Spring Boot" not in stack:
+                stack.append("Spring Boot")
+        if "quarkus" in content:
+            if "Quarkus" not in stack:
+                stack.append("Quarkus")
+        if "micronaut" in content:
+            if "Micronaut" not in stack:
+                stack.append("Micronaut")
+        if "ktor" in content:
+            if "Ktor" not in stack:
+                stack.append("Ktor")
+        if any(k in content for k in ["kafka", "spring-kafka"]):
+            arch_cues.add("Event-Driven (Kafka)")
+        if any(k in content for k in ["rabbitmq", "spring-rabbit", "amqp"]):
+            arch_cues.add("Event-Driven (RabbitMQ)")
+        if "temporal" in content or "camunda" in content:
+            arch_cues.add("Orchestrated Workflows (Temporal/BPMN)")
+        if "grpc" in content:
+            arch_cues.add("gRPC / RPC")
+
+    # C# / .NET
+    dotnet_manifests = list(search_root.glob("**/*.csproj")) + list(search_root.glob("**/*.sln"))
+    for p in dotnet_manifests:
+        if is_ignored(p, repo_dir):
+            continue
+        manifests.append(str(p.relative_to(repo_dir)))
+        if "C# / .NET" not in stack:
+            stack.append("C# / .NET")
+        content = p.read_text(errors="ignore").lower()
+        if "microsoft.aspnetcore" in content:
+            if "ASP.NET Core" not in stack:
+                stack.append("ASP.NET Core")
+        if "mediatr" in content:
+            arch_cues.add("CQRS / MediatR")
+        if "masstransit" in content or "nservicebus" in content:
+            arch_cues.add("Event-Driven (MassTransit/Bus)")
+        if "confluent.kafka" in content:
+            arch_cues.add("Event-Driven (Kafka)")
+        if "rabbitmq.client" in content:
+            arch_cues.add("Event-Driven (RabbitMQ)")
+
+    # PHP
+    for p in search_root.glob("**/composer.json"):
+        if is_ignored(p, repo_dir):
+            continue
+        manifests.append(str(p.relative_to(repo_dir)))
+        if "PHP" not in stack:
+            stack.append("PHP")
+        content = p.read_text(errors="ignore").lower()
+        if "laravel/framework" in content:
+            stack.append("Laravel")
+        elif "symfony/" in content:
+            stack.append("Symfony")
+        if "laravel/horizon" in content or "queue" in content:
+            arch_cues.add("Async Worker / Queue")
+        if "swoole" in content or "roadrunner" in content:
+            arch_cues.add("High-Concurrency Coroutines (Swoole/RR)")
+
+    # Elixir
+    for p in search_root.glob("**/mix.exs"):
+        if is_ignored(p, repo_dir):
+            continue
+        manifests.append(str(p.relative_to(repo_dir)))
+        if "Elixir" not in stack:
+            stack.append("Elixir")
+        content = p.read_text(errors="ignore").lower()
+        if "phoenix" in content:
+            stack.append("Phoenix")
+        if "broadway" in content:
+            arch_cues.add("Event-Driven / Stream (Broadway)")
+        if "oban" in content:
+            arch_cues.add("Async Worker (Oban)")
+        if "genserver" in content or "otp" in content:
+            arch_cues.add("Actor Model / OTP")
+
+    # Ruby
+    for p in search_root.glob("**/Gemfile"):
+        if is_ignored(p, repo_dir):
+            continue
+        manifests.append(str(p.relative_to(repo_dir)))
+        if "Ruby" not in stack:
+            stack.append("Ruby")
+        content = p.read_text(errors="ignore").lower()
+        if "rails" in content:
+            stack.append("Ruby on Rails")
+        if "sidekiq" in content:
+            arch_cues.add("Async Worker (Sidekiq)")
+        if any(k in content for k in ["kafka", "bunny"]):
+            arch_cues.add("Event-Driven (Broker)")
+
     # Structural directory inspection for architectural cues
-    all_dirs = {p.name.lower() for p in search_root.glob("**/*") if p.is_dir() and not any(ign in p.parts for ign in IGNORED_PATHS)}
+    all_dirs = {p.name.lower() for p in search_root.glob("**/*") if p.is_dir() and not is_ignored(p, repo_dir)}
     if any(d in all_dirs for d in ["consumers", "workers", "subscribers", "listeners"]):
         arch_cues.add("Worker / Consumer Pool")
     if any(d in all_dirs for d in ["domain", "entities", "usecases", "ports", "adapters"]):
@@ -159,6 +272,11 @@ def find_entrypoints(repo_dir: Path, subpath: Path = None) -> list:
         "**/main.js", "**/index.js", "**/server.ts", "**/server.js",
         "**/main.py", "**/app.py", "**/wsgi.py", "**/asgi.py",
         "**/main.rs", "**/lib.rs",
+        "**/*Application.java", "**/*Application.kt", "**/Main.java", "**/Main.kt", "**/Server.java",
+        "**/Program.cs", "**/Startup.cs",
+        "**/public/index.php", "**/artisan",
+        "**/application.ex", "**/router.ex", "**/endpoint.ex",
+        "**/config.ru", "**/bin/rails", "**/app.rb",
 
         # Workers, Jobs & Task Queues
         "**/worker*.go", "**/worker*.py", "**/worker*.ts", "**/worker*.js",
@@ -179,7 +297,7 @@ def find_entrypoints(repo_dir: Path, subpath: Path = None) -> list:
     found = []
     for pattern in candidates:
         for p in search_root.glob(pattern):
-            if any(ign in p.parts for ign in IGNORED_PATHS):
+            if is_ignored(p, repo_dir):
                 continue
             if "_test" in p.name or ".spec." in p.name or p.is_dir():
                 continue
@@ -259,14 +377,21 @@ def detect_domain_candidates(repo_dir: Path, subpath: Path = None) -> list:
     patterns = [
         # Domain Models & Entities
         "**/domain/**/*.go", "**/domain/**/*.ts", "**/domain/**/*.py",
+        "**/domain/**/*.java", "**/domain/**/*.kt", "**/domain/**/*.cs", "**/domain/**/*.php", "**/domain/**/*.ex",
         "**/models/**/*.go", "**/models/**/*.ts", "**/models/**/*.py",
+        "**/models/**/*.java", "**/models/**/*.kt", "**/models/**/*.cs", "**/models/**/*.php", "**/models/**/*.ex",
         "**/entities/**/*.go", "**/entities/**/*.ts", "**/entities/**/*.py",
+        "**/entities/**/*.java", "**/entities/**/*.kt", "**/entities/**/*.cs", "**/entities/**/*.php",
 
         # Event-Driven Schemas, Contracts & Messages
         "**/events/**/*.go", "**/events/**/*.ts", "**/events/**/*.py",
+        "**/events/**/*.java", "**/events/**/*.kt", "**/events/**/*.cs", "**/events/**/*.ex",
         "**/messages/**/*.go", "**/messages/**/*.ts", "**/messages/**/*.py",
+        "**/messages/**/*.java", "**/messages/**/*.kt", "**/messages/**/*.cs",
         "**/commands/**/*.go", "**/commands/**/*.ts", "**/commands/**/*.py",
+        "**/commands/**/*.java", "**/commands/**/*.kt", "**/commands/**/*.cs",
         "**/queries/**/*.go", "**/queries/**/*.ts",
+        "**/queries/**/*.java", "**/queries/**/*.kt", "**/queries/**/*.cs",
         "**/*.proto", "**/*.avro",
 
         # Database Schemas & Migrations
@@ -276,7 +401,7 @@ def detect_domain_candidates(repo_dir: Path, subpath: Path = None) -> list:
     candidates = []
     for pattern in patterns:
         for p in search_root.glob(pattern):
-            if any(ign in p.parts for ign in IGNORED_PATHS):
+            if is_ignored(p, repo_dir):
                 continue
             if p.suffix in IGNORED_EXTENSIONS or "_test" in p.name or ".spec." in p.name or p.is_dir():
                 continue
@@ -291,12 +416,14 @@ def detect_e2e_or_smoke_tests(repo_dir: Path, subpath: Path = None) -> list:
     search_root = (repo_dir / subpath) if subpath else repo_dir
 
     patterns = [
-        "**/e2e*.*", "**/*smoke*.*", "**/integration*.*", "**/test_api*.*"
+        "**/e2e*.*", "**/*smoke*.*", "**/integration*.*", "**/test_api*.*",
+        "**/*IntegrationTest.*", "**/*IntegrationTests.*", "**/*IT.*", "**/*E2ETest.*",
+        "**/*_spec.rb", "**/*_test.exs"
     ]
     tests = []
     for pattern in patterns:
         for p in search_root.glob(pattern):
-            if any(ign in p.parts for ign in IGNORED_PATHS):
+            if is_ignored(p, repo_dir):
                 continue
             if p.is_file() and p.suffix not in IGNORED_EXTENSIONS:
                 rel = str(p.relative_to(repo_dir))
