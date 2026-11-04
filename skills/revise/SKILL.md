@@ -13,7 +13,8 @@ Unlike a bug diagnosis or full rewrite, `/revise` is surgical: it addresses spec
 
 ## Guiding Principles
 
-- **Review-Driven Behavioral & Business Alignment**: Code reviews frequently uncover incorrect domain assumptions, missing edge cases, flawed state transitions, or misaligned business rules. The agent MUST fully implement whatever behavioral, business, or architectural corrections the reviewer requests—modifying domain entities, use cases, and tests as deeply as needed to satisfy the business intent.
+- **Peer Dialogue over Sycophancy (No Mindless Changes)**: Code review is a collaborative peer engineering dialogue, not blind obedience. The agent must critically evaluate review suggestions against architectural invariants, concurrency safety, performance trade-offs, and requirement constraints. If a suggestion introduces regressions, weakens error handling, or undoes an intentional design decision, the agent MUST articulate the rationale, explain the trade-off, and debate or propose alternatives rather than blindly mutating code.
+- **Review-Driven Behavioral & Business Alignment**: When a suggestion or correction is validated, the agent MUST fully implement whatever behavioral, business, or architectural corrections the reviewer requests—modifying domain entities, use cases, and tests as deeply as needed to satisfy the business intent.
 - **Zero Unsolicited Scope Creep**: The restriction is strictly against *gratuitous, unrequested changes* (e.g. reformatting untouched files, refactoring unrelated endpoints, changing code style elsewhere, or upgrading unrelated dependencies). Any change directly required to fulfill the reviewer's requested behavior is 100% in scope.
 - **Dual-Source Review Ingestion**: Ingest feedback seamlessly from both **GitHub PR reviews/comments** (`gh api`, `gh pr view`) and **in-chat developer instructions**.
 - **Context & Workspace Awareness**:
@@ -68,7 +69,7 @@ elif [ "$PR_STATE" = "MERGED" ]; then
 fi
 ```
 
-### 2. Ingest Review Feedback
+### 2. Ingest & Evaluate Review Feedback (Technical Dialogue)
 Retrieve all open reviews and inline comments from GitHub:
 ```bash
 # Fetch PR details and top-level reviews
@@ -79,9 +80,16 @@ gh api repos/:owner/:repo/pulls/<pr-number>/comments \
   --jq '.[] | {path: .path, line: .line, body: .body, user: .user.login}'
 ```
 
-Combine GitHub review comments with any additional instructions provided in the chat. Formulate an actionable checklist of review items:
-- [ ] Item 1: `path/to/file.ext` — <Specific requested change>
-- [ ] Item 2: `path/to/file.ext` — <Specific requested change>
+Combine GitHub review comments with any additional instructions provided in the chat.
+
+**Classify & Evaluate Each Item Critically:**
+- **Category A (Direct Corrections & Fixes)**: Validated bug, missed edge case, typo, or requested business rule adjustment $\rightarrow$ Queue for direct implementation.
+- **Category B (Design Disagreements & High-Risk Suggestions)**: If the reviewer's suggestion introduces performance regressions, concurrency race conditions, breaks external contracts, or undoes an intentional design decision $\rightarrow$ **Debate before coding**:
+  > *"Regarding the suggestion on `path/to/file#L40`: I originally implemented approach X because of [rationale/invariant]. If we switch to [suggestion], [trade-off/risk] would occur. We could also consider [alternative C]. How would you prefer to proceed?"*
+- Wait for developer confirmation on Category B items before making controversial or destructive changes.
+- Formulate the agreed-upon action checklist:
+  - [ ] Item 1: `path/to/file.ext` — <Specific agreed change>
+  - [ ] Item 2: `path/to/file.ext` — <Specific agreed change>
 
 ### 3. Apply Revisions & Behavioral Corrections
 - For each review item:
