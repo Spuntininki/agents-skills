@@ -35,6 +35,7 @@ Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
    - **Architecture & Boundaries**: Follow the repository's native architectural style (e.g. Hexagonal, Clean, MVC, Feature-based).
    - **Pinned & Verified Dependencies**: When introducing any new library, verify its real, official, and stable release (via package manager CLI or registry query). Pin the exact verified version in the installation/manifest file (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`). Never hallucinate version numbers or use floating/unpinned tags (`*`, `latest`).
    - **Concurrency & Safety**: Context propagation on all I/O; proper synchronization on shared mutable state.
+   - **Test & Environment Isolation**: Tests and test suites must be safe for concurrent execution across worktrees. Never assume exclusive access to singleton database names or fixed ports that collide during parallel test runs; use isolated schemas (e.g. per-worktree schema), dynamic/ephemeral ports, or in-memory fixtures.
    - **Errors & Logs**: Use idiomatic sentinel/domain errors and structured logging. Never use raw prints for runtime logs.
 
 4. **Commits**: Make iterative, atomic Conventional Commits (`type(scope): message`).

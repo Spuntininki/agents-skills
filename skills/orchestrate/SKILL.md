@@ -77,9 +77,18 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      git -C .worktrees/issue-<sibling-id> fetch origin epic/issue-<epic-number>-<slug>
      git -C .worktrees/issue-<sibling-id> rebase origin/epic/issue-<epic-number>-<slug>
      ```
+     - **Rebase Conflict Protocol**:
+       - *Trivial Conflicts (adjacent imports, route lists, dependency manifests)*: Resolve inline by preserving both additions, run `git -C .worktrees/issue-<sibling-id> add <file>`, and execute `git -C .worktrees/issue-<sibling-id> rebase --continue`.
+       - *Semantic / Architectural Conflicts*: Abort the rebase (`git -C .worktrees/issue-<sibling-id> rebase --abort`) and message the sibling executor subagent to adapt its implementation to the updated Epic branch before proceeding.
 
 5. **Cleanup & Advance**:
-   - Remove finished worktree: `git worktree remove .worktrees/issue-<id> --force && git branch -D feat/issue-<id>-<slug> 2>/dev/null || true` (or run `<skill-dir>/scripts/cleanup-worktrees.sh` to batch-prune all merged worktrees without reading its source).
+   - Teardown Docker Compose containers, networks, and volumes if used in worktree:
+     ```bash
+     if command -v docker &>/dev/null; then
+       docker compose -f .worktrees/issue-<id>/docker-compose.yml down -v --remove-orphans 2>/dev/null || true
+     fi
+     ```
+   - Remove finished worktree: `git worktree remove .worktrees/issue-<id> --force && git branch -D feat/issue-<id>-<slug> 2>/dev/null || true` (or run `<skill-dir>/scripts/cleanup-worktrees.sh` to batch-prune all merged worktrees, compose volumes, and dangling images without reading its source).
    - Update parent Epic checklist: mark completed slice `- [x] ... #<id>`.
    - If pending slices remain, return to **Step 2**.
 
@@ -89,8 +98,13 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      gh pr create --base main --head epic/issue-<epic-number>-<slug> ${MILESTONE:+-m "$MILESTONE"} --title "feat: <epic-title>" --body "Closes #<epic-number>"
      ```
    - Update Dashboard comment marking all slices as `🚀 MERGED` and linking the final Release PR.
-   - Once merged into `main`, CD triggers once for atomic deployment. Close Epic, delete remote epic branch, and close Milestone if complete:
+   - Once merged into `main`, CD triggers once for atomic deployment. Close Epic, delete remote epic branch, prune dangling docker images, and close Milestone if complete:
      ```bash
+     # Prune dangling docker images generated during test builds
+     if command -v docker &>/dev/null; then
+       docker image prune -f 2>/dev/null || true
+     fi
+
      if [ -n "$MILESTONE" ]; then
        gh api repos/:owner/:repo/milestones/$(gh api repos/:owner/:repo/milestones -q ".[] | select(.title==\"$MILESTONE\") | .number") -X PATCH -f state=closed 2>/dev/null || true
      fi

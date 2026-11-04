@@ -35,7 +35,18 @@ git worktree list --porcelain | grep '^worktree ' | awk '{print $2}' | while rea
 
     if [ "$pr_state" == "MERGED" ]; then
       echo "✅ PR for issue #$issue_num is MERGED. Cleaning up..."
-      
+
+      # Teardown Docker Compose containers, networks, and volumes if present in worktree
+      if command -v docker &>/dev/null; then
+        for compose_file in "$wt_path/docker-compose.yml" "$wt_path/docker-compose.yaml" "$wt_path/compose.yaml" "$wt_path/compose.yml"; do
+          if [ -f "$compose_file" ]; then
+            echo "Tearing down Docker Compose containers and volumes for issue #$issue_num..."
+            docker compose -f "$compose_file" down -v --remove-orphans 2>/dev/null || true
+            break
+          fi
+        done
+      fi
+
       # Remove worktree
       git worktree remove "$wt_path" --force || rm -rf "$wt_path"
       
@@ -57,4 +68,11 @@ done
 
 # Prune git internal metadata
 git worktree prune
+
+# Prune dangling docker images
+if command -v docker &>/dev/null; then
+  echo "Pruning dangling docker images..."
+  docker image prune -f 2>/dev/null || true
+fi
+
 echo "===> Cleanup complete."

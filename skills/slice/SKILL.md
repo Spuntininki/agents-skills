@@ -14,8 +14,8 @@ Decompose features or large issues into independent, vertically sliced micro-iss
 1. **Cohesion First (Anti-Cascading Coupling)**: Never slice along arbitrary line limits or horizontal layers (e.g. DB in one issue, API in another). Slices spanning models, routes, and tests together for a single cohesive capability are natural. If modifying Slice B requires altering Slice A, **they belong to the same issue**.
 2. **Low Cognitive Load Review (~15 min)**: Each PR must be quick and cheap for a human to review (~15 minutes of focused reading). If a feature is too dense, split along natural behavioral seams (e.g. happy path first, complex retries/edge cases second), never by technical layers.
 3. **Execution Modes**:
-   - `⚡ Parallel`: Independent tasks with **disjoint file boundaries** (zero merge conflicts). Run concurrently in separate worktrees.
-   - `🔒 Serial`: Foundational schemas/contracts, or final wiring steps with blocking dependencies.
+   - `⚡ Parallel`: Independent tasks with **disjoint file boundaries** and **zero shared-resource contention** (e.g. no collisions on single test databases, fixed ports, or locking migrations). Run concurrently in separate worktrees.
+   - `🔒 Serial`: Foundational schemas/contracts, shared migrations/singleton fixtures, or final wiring steps with blocking dependencies.
 
 ## Workflow
 
