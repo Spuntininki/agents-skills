@@ -22,16 +22,20 @@ fi
 echo "===> Scanning $WORKTREE_DIR for completed worktrees..."
 
 # Enumerate active worktrees under .worktrees/issue-*
-git worktree list --porcelain | grep '^worktree ' | awk '{print $2}' | while read -r wt_path; do
+git worktree list --porcelain | grep '^worktree ' | sed 's/^worktree //' | while IFS= read -r wt_path; do
   if [[ "$wt_path" =~ \.worktrees/issue-([0-9]+) ]]; then
     issue_num="${BASH_REMATCH[1]}"
     echo "Checking status for issue #$issue_num ($wt_path)..."
 
-    # Query GitHub CLI for associated PR state
-    pr_state=$(gh pr list --head "feat/issue-$issue_num-" --state all --json state -q '.[0].state' 2>/dev/null || echo "")
-    if [ -z "$pr_state" ]; then
-      pr_state=$(gh pr list --head "fix/issue-$issue_num-" --state all --json state -q '.[0].state' 2>/dev/null || echo "")
-    fi
+    # Query GitHub CLI for associated PR state across common branch conventions
+    pr_state=""
+    for prefix in feat fix chore refactor docs codex ""; do
+      head_query="${prefix:+${prefix}/}issue-$issue_num-"
+      pr_state=$(gh pr list --head "$head_query" --state all --json state -q '.[0].state' 2>/dev/null || echo "")
+      if [ -n "$pr_state" ]; then
+        break
+      fi
+    done
 
     if [ "$pr_state" == "MERGED" ]; then
       echo "✅ PR for issue #$issue_num is MERGED. Cleaning up..."
@@ -41,7 +45,7 @@ git worktree list --porcelain | grep '^worktree ' | awk '{print $2}' | while rea
         for compose_file in "$wt_path/docker-compose.yml" "$wt_path/docker-compose.yaml" "$wt_path/compose.yaml" "$wt_path/compose.yml"; do
           if [ -f "$compose_file" ]; then
             echo "Tearing down Docker Compose containers and volumes for issue #$issue_num..."
-            docker compose -f "$compose_file" down -v --remove-orphans 2>/dev/null || true
+            docker compose --project-directory "$wt_path" -f "$compose_file" down -v --remove-orphans 2>/dev/null || true
             break
           fi
         done
@@ -50,12 +54,13 @@ git worktree list --porcelain | grep '^worktree ' | awk '{print $2}' | while rea
       # Remove worktree
       git worktree remove "$wt_path" --force || rm -rf "$wt_path"
       
-      # Delete associated local branch
-      branch_name=$(git branch --list "*issue-$issue_num-*" | tr -d ' *' | head -n 1 || true)
-      if [ -n "$branch_name" ]; then
-        echo "Deleting local branch: $branch_name"
-        git branch -D "$branch_name" 2>/dev/null || true
-      fi
+      # Delete associated local branches
+      git branch --list "*issue-$issue_num-*" | tr -d ' *' | while IFS= read -r branch_name; do
+        if [ -n "$branch_name" ]; then
+          echo "Deleting local branch: $branch_name"
+          git branch -D "$branch_name" 2>/dev/null || true
+        fi
+      done
     elif [ "$pr_state" == "OPEN" ]; then
       echo "⏳ PR for issue #$issue_num is still OPEN. Keeping worktree."
     elif [ -z "$pr_state" ]; then
