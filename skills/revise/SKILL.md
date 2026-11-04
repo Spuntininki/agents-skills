@@ -59,7 +59,8 @@ elif [ -d ".worktrees/pr-<pr-number>" ]; then
 # 2. If PR is OPEN and worktree was pruned or absent: provision a fresh isolated worktree
 elif [ "$PR_STATE" = "OPEN" ]; then
   git fetch origin "$HEAD_BRANCH"
-  git worktree add .worktrees/pr-<pr-number> "$HEAD_BRANCH"
+  git worktree add .worktrees/pr-<pr-number> -b "$HEAD_BRANCH" origin/"$HEAD_BRANCH" 2>/dev/null || \
+    git worktree add .worktrees/pr-<pr-number> "$HEAD_BRANCH"
   cd .worktrees/pr-<pr-number>
 
 # 3. If PR is already MERGED into the Epic branch: branch from Epic base for follow-up fix
