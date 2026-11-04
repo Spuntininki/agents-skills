@@ -17,6 +17,37 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 
 ---
 
+## Workflow Lifecycle
+
+How the skills collaborate across the software development lifecycle:
+
+```mermaid
+flowchart TD
+    subgraph Onboarding ["🔍 Codebase Onboarding"]
+        A["Unfamiliar Repository"] -->|/explore| B["Architectural Map & Reading Path"]
+    end
+
+    subgraph Features ["🚀 Feature Delivery"]
+        C["Feature Idea or Large Issue"] -->|/slice| D["Epic & Micro-Issues"]
+        D -->|Refine Trade-offs| E["/refine"]
+        E -->|Technical Spec Ready| F["/implement"]
+        D -->|Multi-Issue Epic| G["/orchestrate"]
+        G -->|Worktrees & Subagents| F
+        F -->|Opens PR with Reviewer Guide| H["Code Review"]
+        H -->|Reviewer Feedback| I["/revise"]
+        I -->|Delegates Surgical Changes| F
+        H -->|Approved & Green CI| J["Merge to Base Branch"]
+    end
+
+    subgraph Bugs ["🐛 Bug Triage & RCA"]
+        K["Bug Report or Failing Test"] -->|/diagnose| L["Isolated RCA Subagent + Repro Test"]
+        L -->|Creates Bug Issue| D
+        L -->|Direct Fix| F
+    end
+```
+
+---
+
 ## Installation
 
 Requires Python 3.10+. The installer supports auto-detection, multi-harness presets, symlinking, and safe upgrades:
