@@ -13,14 +13,15 @@ Unlike a bug diagnosis or full rewrite, `/revise` is surgical: it addresses spec
 
 ## Guiding Principles
 
-- **Surgical Execution (Anti-Rewrite)**: Touch *only* the specific files, lines, and abstractions flagged by the reviewer. Never introduce unrequested refactorings, change surrounding formatting, or alter unrelated business logic.
+- **Review-Driven Behavioral & Business Alignment**: Code reviews frequently uncover incorrect domain assumptions, missing edge cases, flawed state transitions, or misaligned business rules. The agent MUST fully implement whatever behavioral, business, or architectural corrections the reviewer requests—modifying domain entities, use cases, and tests as deeply as needed to satisfy the business intent.
+- **Zero Unsolicited Scope Creep**: The restriction is strictly against *gratuitous, unrequested changes* (e.g. reformatting untouched files, refactoring unrelated endpoints, changing code style elsewhere, or upgrading unrelated dependencies). Any change directly required to fulfill the reviewer's requested behavior is 100% in scope.
 - **Dual-Source Review Ingestion**: Ingest feedback seamlessly from both **GitHub PR reviews/comments** (`gh api`, `gh pr view`) and **in-chat developer instructions**.
 - **Context & Workspace Awareness**:
   - If a worktree exists for this slice (`.worktrees/issue-<id>`), work directly inside it.
   - If it is a standalone PR or branch, checkout the branch (`gh pr checkout <pr-number>`).
   - If the slice was already merged into an Epic branch, create a dedicated revision branch targeting the Epic branch (`fix/review-issue-<id>`).
-- **Regression Prevention**: Always run existing project tests and linters to verify that incorporating the review feedback did not break existing behavior.
-- **Traceable Atomic Commits**: Commit changes with conventional messages referencing the review (e.g. `refactor(auth): address review feedback on token expiration`), push to the PR branch, and update the PR with a summary of changes.
+- **Living Test Synchronization**: When altering behavior or business rules based on review feedback, always update or add corresponding unit/integration tests to serve as living proof of the corrected behavior.
+- **Traceable Atomic Commits**: Commit changes with conventional messages referencing the review (e.g. `refactor(auth): address review feedback on token expiration` or `fix(order): align discount business rule with enterprise tier`), push to the PR branch, and update the PR with a summary of changes.
 
 ---
 
@@ -56,11 +57,11 @@ Combine GitHub review comments with any additional instructions provided in the 
 - [ ] Item 1: `path/to/file.ext` — <Specific requested change>
 - [ ] Item 2: `path/to/file.ext` — <Specific requested change>
 
-### 3. Apply Surgical Modifications
+### 3. Apply Revisions & Behavioral Corrections
 - For each review item:
-  - Open the exact file and lines referenced.
-  - Apply the requested changes (e.g. renaming, edge-case validation, tightening types, extracting helper).
-  - Do NOT touch unrelated code.
+  - Understand the reviewer's intent: whether it is a business rule correction, edge-case validation, domain invariant alignment, architectural adjustment, or structural refinement.
+  - Implement all changes required across the affected domain entities, use cases, and tests to satisfy the reviewer's requirement completely.
+  - Do NOT make gratuitous, unrequested alterations to unrelated files or unaffected code.
 
 ### 4. Verify & Test
 Run the relevant test suite and linters to ensure zero regressions:
