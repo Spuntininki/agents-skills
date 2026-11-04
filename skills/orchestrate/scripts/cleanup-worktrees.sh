@@ -21,21 +21,50 @@ fi
 
 echo "===> Scanning $WORKTREE_DIR for completed worktrees..."
 
+# Prefetch all repository PR metadata in a single call to prevent API rate limits
+ALL_PRS_JSON=""
+if command -v gh &>/dev/null; then
+  ALL_PRS_JSON=$(gh pr list --state all --limit 200 --json headRefName,state 2>/dev/null || echo "[]")
+fi
+
 # Enumerate active worktrees under .worktrees/issue-*
 git worktree list --porcelain | grep '^worktree ' | sed 's/^worktree //' | while IFS= read -r wt_path; do
   if [[ "$wt_path" =~ \.worktrees/issue-([0-9]+) ]]; then
     issue_num="${BASH_REMATCH[1]}"
     echo "Checking status for issue #$issue_num ($wt_path)..."
 
-    # Query GitHub CLI for associated PR state across common branch conventions
+    # Query cached PR state in memory across branch prefixes
     pr_state=""
-    for prefix in feat fix chore refactor docs codex ""; do
-      head_query="${prefix:+${prefix}/}issue-$issue_num-"
-      pr_state=$(gh pr list --head "$head_query" --state all --json state -q '.[0].state' 2>/dev/null || echo "")
-      if [ -n "$pr_state" ]; then
-        break
+    if [ -n "$ALL_PRS_JSON" ] && [ "$ALL_PRS_JSON" != "[]" ]; then
+      if command -v jq &>/dev/null; then
+        pr_state=$(echo "$ALL_PRS_JSON" | jq -r --arg id "$issue_num" '
+          [.[] | select(.headRefName | test("(^|/)issue-" + $id + "(-|$)"))] | .[0].state // ""
+        ' 2>/dev/null || echo "")
+      elif command -v python3 &>/dev/null; then
+        pr_state=$(python3 -c "
+import sys, json, re
+try:
+    data = json.loads(sys.argv[1])
+    target = sys.argv[2]
+    pattern = re.compile(rf'(^|/)issue-{target}(?:-|$)')
+    matches = [p.get('state', '') for p in data if pattern.search(p.get('headRefName', ''))]
+    print(matches[0] if matches else '')
+except Exception:
+    pass
+" "$ALL_PRS_JSON" "$issue_num" 2>/dev/null || echo "")
       fi
-    done
+    fi
+
+    # Fallback to direct query if prefetch failed or returned no match
+    if [ -z "$pr_state" ] && command -v gh &>/dev/null; then
+      for prefix in feat fix chore refactor docs codex ""; do
+        head_query="${prefix:+${prefix}/}issue-$issue_num-"
+        pr_state=$(gh pr list --head "$head_query" --state all --json state -q '.[0].state' 2>/dev/null || echo "")
+        if [ -n "$pr_state" ]; then
+          break
+        fi
+      done
+    fi
 
     if [ "$pr_state" == "MERGED" ]; then
       echo "✅ PR for issue #$issue_num is MERGED. Cleaning up..."
@@ -73,11 +102,5 @@ done
 
 # Prune git internal metadata
 git worktree prune
-
-# Prune dangling docker images
-if command -v docker &>/dev/null; then
-  echo "Pruning dangling docker images..."
-  docker image prune -f 2>/dev/null || true
-fi
 
 echo "===> Cleanup complete."

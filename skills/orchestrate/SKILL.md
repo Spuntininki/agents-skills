@@ -104,7 +104,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      ```bash
      bash <skill-dir>/scripts/cleanup-worktrees.sh
      ```
-     > **Note**: Do NOT inspect `cleanup-worktrees.sh` source code. It is a pre-packaged utility that safely verifies PR merge state, tears down Compose containers/volumes, removes finished worktrees, and prunes dangling Docker images.
+     > **Note**: Do NOT inspect `cleanup-worktrees.sh` source code. It is a pre-packaged utility that safely verifies PR merge state, tears down Compose containers/volumes, removes finished worktrees, and prunes git metadata.
    - Update parent Epic checklist: mark completed slice `- [x] ... #<id>`.
    - If pending slices remain, return to **Step 2**.
 
