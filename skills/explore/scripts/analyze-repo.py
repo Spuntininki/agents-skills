@@ -195,7 +195,7 @@ def git_churn_hotspots(repo_dir: Path, subpath: Path = None, max_commits: int = 
     git_root = Path(git_root_raw) if git_root_raw else repo_dir
     target_scope = (repo_dir / subpath).resolve() if subpath else repo_dir.resolve()
 
-    git_args = ["log", f"-n{max_commits}", "--format=", "--name-only"]
+    git_args = ["log", "--no-merges", f"-n{max_commits}", "--format=", "--name-only"]
     if since:
         git_args.append(f"--since={since}")
 
@@ -227,17 +227,21 @@ def git_churn_hotspots(repo_dir: Path, subpath: Path = None, max_commits: int = 
         full_path = git_root / p
         if full_path.is_file():
             try:
-                display_rel = str(full_path.relative_to(repo_dir))
+                rel_path = full_path.relative_to(repo_dir)
+                display_rel = str(rel_path)
             except ValueError:
+                rel_path = Path(p)
                 display_rel = str(p)
 
             file_counter[display_rel] += 1
 
-            # Group by top 2 directory levels
-            rel_parts = Path(display_rel).parts
-            if len(rel_parts) >= 2:
-                comp = "/".join(rel_parts[:2]) if len(rel_parts) == 2 else "/".join(rel_parts[:3])
+            # Group by top directory levels (components/modules)
+            parent_dir = rel_path.parent
+            if parent_dir != Path(".") and parent_dir.parts:
+                comp = "/".join(parent_dir.parts[:2])
                 comp_counter[comp] += 1
+            else:
+                comp_counter["(root)"] += 1
 
     file_hotspots = [{"file": path, "changes": count} for path, count in file_counter.most_common(12)]
     component_hotspots = [{"component": comp, "changes": count} for comp, count in comp_counter.most_common(6)]
