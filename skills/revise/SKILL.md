@@ -1,29 +1,32 @@
 ---
 name: revise
 description: >-
-  Addresses code review feedback and requested changes on an open pull request or branch,
-  applying surgical fixes, running verification, and updating the PR.
+  Evaluates code review feedback, conducts peer technical dialogue on trade-offs,
+  and delegates verified implementation to /implement on the existing PR.
 ---
 
 # /revise
 
-Incorporate code review feedback, peer suggestions, or requested changes into an existing pull request or branch.
+Evaluate code review feedback, debate technical trade-offs, and synthesize an actionable revision specification for `/implement`.
 
-Unlike a bug diagnosis or full rewrite, `/revise` is surgical: it addresses specific review comments while maintaining architectural boundaries, existing conventions, and test coverage.
+Rather than duplicating coding standards, `/revise` serves as the **Code Review Triage & Dialogue Engine**, handing off implementation directly to `/implement` while keeping the original PR updated.
+
+```
+                  ┌───────────────┐
+Feature Planning: │    /refine    │ ───┐
+                  └───────────────┘    │
+                                       ▼
+                  ┌───────────────┐ ┌───────────────┐
+Review Revisions: │    /revise    │─┤  /implement   │ ──> [PR Updated & Verified]
+                  └───────────────┘ └───────────────┘
+```
 
 ## Guiding Principles
 
-- **Peer Dialogue over Sycophancy (No Mindless Changes)**: Code review is a collaborative peer engineering dialogue, not blind obedience. The agent must critically evaluate review suggestions against architectural invariants, concurrency safety, performance trade-offs, and requirement constraints. If a suggestion introduces regressions, weakens error handling, or undoes an intentional design decision, the agent MUST articulate the rationale, explain the trade-off, and debate or propose alternatives rather than blindly mutating code.
-- **Review-Driven Behavioral & Business Alignment**: When a suggestion or correction is validated, the agent MUST fully implement whatever behavioral, business, or architectural corrections the reviewer requests—modifying domain entities, use cases, and tests as deeply as needed to satisfy the business intent.
-- **Zero Unsolicited Scope Creep**: The restriction is strictly against *gratuitous, unrequested changes* (e.g. reformatting untouched files, refactoring unrelated endpoints, changing code style elsewhere, or upgrading unrelated dependencies). Any change directly required to fulfill the reviewer's requested behavior is 100% in scope.
-- **Dual-Source Review Ingestion**: Ingest feedback seamlessly from both **GitHub PR reviews/comments** (`gh api`, `gh pr view`) and **in-chat developer instructions**.
-- **Context & Workspace Awareness**:
-  - If a worktree exists for this slice (`.worktrees/issue-<id>`), work directly inside it.
-  - If it is a standalone PR or branch, checkout the branch (`gh pr checkout <pr-number>`).
-  - If the slice was already merged into an Epic branch, create a dedicated revision branch targeting the Epic branch (`fix/review-issue-<id>`).
-- **Living Test Synchronization**: When altering behavior or business rules based on review feedback, always update or add corresponding unit/integration tests to serve as living proof of the corrected behavior.
-- **Subagent Execution on Original Issue/PR**: Code review revisions belong to the original issue and PR—never create redundant issues for review feedback. Execute revisions inside an isolated executor subagent operating in the target worktree. This prevents build logs, test outputs, and compiler noise from polluting the orchestrator's conversation context while updating the original PR branch directly.
-- **Traceable Atomic Commits**: Commit changes with conventional messages referencing the review (e.g. `refactor(auth): address review feedback on token expiration` or `fix(order): align discount business rule with enterprise tier`), push to the PR branch, and update the PR with a summary of changes.
+- **Peer Dialogue over Sycophancy**: Code review is a peer engineering dialogue, not mindless obedience. Critically evaluate suggestions against system invariants, concurrency safety, and performance. If a suggestion introduces risks, weakens error handling, or undoes an intentional design decision, articulate the rationale, explain the trade-off, and debate or propose alternatives before modifying code.
+- **Review-Driven Business & Behavioral Alignment**: Validated review feedback (business logic corrections, missing edge cases, invariant adjustments) must be fully addressed across domain models and tests.
+- **Single Implementation Engine**: Delegate all code modifications, linting, test verification, and commit execution to `/implement`. Do not maintain duplicate coding standards.
+- **Original PR & Worktree Target**: Revisions belong to the original PR and issue. Never create redundant issues. Work directly in the active worktree (`.worktrees/issue-<id>`) or provision an isolated worktree for the PR branch.
 
 ---
 
@@ -32,11 +35,8 @@ Unlike a bug diagnosis or full rewrite, `/revise` is surgical: it addresses spec
 ### 1. Identify Target PR & Workspace
 Accept one or more of:
 - PR number or URL: `/revise 14`
-- Optional inline instructions: `/revise 14 "rename DTO to CustomerPayload and add invalid domain test"`
+- Optional inline instructions: `/revise 14 "align discount with enterprise tier"`
 - If no argument is provided, detect the current active branch or open PR.
-
-> [!TIP]
-> When invoked within an orchestration or multi-task session, dispatch a dedicated executor subagent into the worktree to perform `/revise`. This keeps the parent session's context window clean while updating the original PR in place.
 
 **Query Target PR Details:**
 ```bash
@@ -83,64 +83,41 @@ gh api repos/:owner/:repo/pulls/<pr-number>/comments \
 Combine GitHub review comments with any additional instructions provided in the chat.
 
 **Classify & Evaluate Each Item Critically:**
-- **Category A (Direct Corrections & Fixes)**: Validated bug, missed edge case, typo, or requested business rule adjustment $\rightarrow$ Queue for direct implementation.
+- **Category A (Direct Corrections & Fixes)**: Validated bug, missed edge case, typo, or requested business rule adjustment $\rightarrow$ Queue for implementation.
 - **Category B (Design Disagreements & High-Risk Suggestions)**: If the reviewer's suggestion introduces performance regressions, concurrency race conditions, breaks external contracts, or undoes an intentional design decision $\rightarrow$ **Debate before coding**:
   > *"Regarding the suggestion on `path/to/file#L40`: I originally implemented approach X because of [rationale/invariant]. If we switch to [suggestion], [trade-off/risk] would occur. We could also consider [alternative C]. How would you prefer to proceed?"*
-- Wait for developer confirmation on Category B items before making controversial or destructive changes.
-- Formulate the agreed-upon action checklist:
-  - [ ] Item 1: `path/to/file.ext` — <Specific agreed change>
-  - [ ] Item 2: `path/to/file.ext` — <Specific agreed change>
+  Wait for developer confirmation on Category B items before making controversial changes.
 
-### 3. Apply Revisions & Behavioral Corrections
-- For each review item:
-  - Understand the reviewer's intent: whether it is a business rule correction, edge-case validation, domain invariant alignment, architectural adjustment, or structural refinement.
-  - Implement all changes required across the affected domain entities, use cases, and tests to satisfy the reviewer's requirement completely.
-  - Do NOT make gratuitous, unrequested alterations to unrelated files or unaffected code.
-
-### 4. Verify & Test
-Run the relevant test suite and linters to ensure zero regressions:
-```bash
-# Run targeted tests for modified module
-<test-command-for-project>
-
-# Run linter
-<lint-command-for-project>
+### 3. Synthesize Revision Specification & Delegate to /implement
+Synthesize the agreed-upon changes into a clear Revision Specification:
+```markdown
+## 🛠️ Revision Specification for PR #<pr-number>
+- **Target Branch**: `<head-branch>`
+- **Scope of Revisions**:
+  1. [`file`](path#L10): <Specific correction or business rule change>
+  2. [`tests`](path): <Living test to update or add verifying the change>
+- **Invariants & Safety Rules**: <Key constraints to maintain>
 ```
 
-### 5. Commit & Push
-Commit with a clear, conventional message describing the review resolution:
+Dispatch an executor subagent (or execute directly in current worktree) invoking `/implement`:
+> "Implement the Revision Specification above on branch `<head-branch>`. Adhere to clean code standards (no vanity tests, zero redundant comments, pinned dependencies), run project test suite, and commit atomically with `refactor(<scope>): address review feedback ...`."
+
+### 4. Post Summary on PR & Cleanup
+Once `/implement` finishes verification and pushes to `<head-branch>`:
 ```bash
-git add <modified-files>
-git commit -m "refactor(<scope>): address review feedback regarding <summary>"
-
-# If working on an open PR: push directly to update the PR
-if [ "$PR_STATE" = "OPEN" ]; then
-  git push origin "$HEAD_BRANCH"
-
-# If PR was already merged into the Epic: push follow-up branch and open a quick revision PR
-elif [ "$PR_STATE" = "MERGED" ]; then
-  git push origin fix/rev-pr-<pr-number>
-  gh pr create --base "$BASE_BRANCH" --head fix/rev-pr-<pr-number> \
-    --title "fix: review adjustments for PR #<pr-number>" \
-    --body "Applies review adjustments requested on merged PR #<pr-number>."
-fi
-```
-
-### 6. Notify Reviewer / Post Summary & Cleanup
-Post a concise summary comment on the PR detailing how each review item was resolved:
-```bash
+# Post summary comment resolving review items
 gh pr comment <pr-number> --body "$(cat << 'EOF'
 ## 🛠️ Revisions Applied
 
-Addressed review feedback in commit `<commit-hash>`:
+Addressed review feedback:
 - **`path/to/file.ext`**: <Summary of change made>
-- **`tests/path_test.ext`**: <Added or updated test verifying the review point>
+- **`tests/path_test.ext`**: <Updated test verifying the review point>
 
 All tests and lint checks passing. Ready for re-review!
 EOF
 )"
 
-# If a temporary worktree was created exclusively for this revision, remove it
+# If a temporary worktree was created dynamically for this revision, remove it
 cd - >/dev/null
 git worktree remove .worktrees/pr-<pr-number> --force 2>/dev/null || true
 ```

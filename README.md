@@ -12,7 +12,7 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 | `refine` | Interactively inspect an issue, align material technical decisions, and enrich implementation specifications. |
 | `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
 | `diagnose` | Perform Root Cause Analysis (RCA) via isolated subagent, create GitHub bug issue(s), and register in Epics for orchestration. |
-| `revise` | Address code review feedback and requested changes on an open PR or branch with surgical fixes and atomic verification. |
+| `revise` | Evaluate code review feedback, debate technical trade-offs, and delegate surgical changes to /implement on existing PRs. |
 | `english-practice` | Maintain language practice with concise, non-disruptive inline corrections while continuing technical tasks. |
 
 ---
