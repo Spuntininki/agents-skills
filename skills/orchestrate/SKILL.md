@@ -10,6 +10,13 @@ description: >-
 
 Supervise and execute multi-issue epics end-to-end against an **Epic Integration Branch** (`epic/issue-<epic>-<slug>`).
 
+## Invocation
+```text
+/orchestrate <epic-number> [--base <branch>]
+```
+- `<epic-number>`: Parent Epic issue number or URL.
+- `--base <branch>`: Target base branch to branch from and merge back into (defaults to repository default branch, e.g. `main`).
+
 ## Workflow
 
 1. **Init Epic Branch, Milestone & Living Dashboard**:
@@ -18,7 +25,17 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      gh issue view <epic-number> --json title,body,milestone
      MILESTONE=$(gh issue view <epic-number> --json milestone -q .milestone.title 2>/dev/null || echo "")
      ```
-   - Ensure integration branch `epic/issue-<epic-number>-<slug>` exists on remote (branched from `origin/main`), then fetch it locally.
+   - Resolve target base branch (defaults to repo default or `main`):
+     ```bash
+     DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo "main")
+     BASE_TARGET="${USER_BASE_BRANCH:-$DEFAULT_BRANCH}"
+     ```
+   - Ensure integration branch `epic/issue-<epic-number>-<slug>` exists on remote (branched from `origin/"$BASE_TARGET"`), then fetch it locally:
+     ```bash
+     git fetch origin "$BASE_TARGET"
+     git branch epic/issue-<epic-number>-<slug> origin/"$BASE_TARGET" 2>/dev/null || true
+     git push origin epic/issue-<epic-number>-<slug> 2>/dev/null || true
+     ```
    - **Initialize Living Dashboard Comment** on parent Epic issue:
      Post (or locate) a dedicated tracking comment with a Markdown status table. This comment will be updated live as slice PRs are created, revised, and merged:
      ```bash
@@ -33,6 +50,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      | :--- | :--- | :--- | :--- | :--- |
      | Initializing... | — | — | ⏳ Planning | — |
 
+     - **Base Target**: `${BASE_TARGET}`
      - **Integration Branch**: `epic/issue-<epic-number>-<slug>`
      - **Milestone**: `${MILESTONE:-None}`
      EOF
@@ -91,12 +109,12 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
    - If pending slices remain, return to **Step 2**.
 
 6. **Release Gate**:
-   - When all slices are `[x]`, open final release PR:
+   - When all slices are `[x]`, open final release PR targeting `$BASE_TARGET`:
      ```bash
-     gh pr create --base main --head epic/issue-<epic-number>-<slug> ${MILESTONE:+-m "$MILESTONE"} --title "feat: <epic-title>" --body "Closes #<epic-number>"
+     gh pr create --base "$BASE_TARGET" --head epic/issue-<epic-number>-<slug> ${MILESTONE:+-m "$MILESTONE"} --title "feat: <epic-title>" --body "Closes #<epic-number>"
      ```
    - Update Dashboard comment marking all slices as `🚀 MERGED` and linking the final Release PR.
-   - Once merged into `main`, CD triggers once for atomic deployment. Run final cleanup, close Epic, delete remote epic branch, and close Milestone if complete:
+   - Once merged into `"$BASE_TARGET"`, CD triggers once for atomic deployment. Run final cleanup, close Epic, delete remote epic branch, and close Milestone if complete:
      ```bash
      bash <skill-dir>/scripts/cleanup-worktrees.sh
 

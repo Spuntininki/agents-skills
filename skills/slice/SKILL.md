@@ -9,6 +9,13 @@ description: >-
 
 Decompose features or large issues into independent, vertically sliced micro-issues targeting an **Epic Integration Branch** (`epic/issue-<epic>-<slug>`).
 
+## Invocation
+```text
+/slice <issue-or-feature-idea> [--base <branch>]
+```
+- `<issue-or-feature-idea>`: Issue number/URL or description of the feature to decompose.
+- `--base <branch>`: Target base branch for the epic integration branch to branch from and merge back into (defaults to repository default branch, e.g. `main`).
+
 ## Core Rules
 
 1. **Cohesion First (Anti-Cascading Coupling)**: Never slice along arbitrary line limits or horizontal layers (e.g. DB in one issue, API in another). Slices spanning models, routes, and tests together for a single cohesive capability are natural. If modifying Slice B requires altering Slice A, **they belong to the same issue**.
@@ -29,6 +36,11 @@ Decompose features or large issues into independent, vertically sliced micro-iss
    - Confirm breakdown with developer before creating issues.
 
 3. **Create Milestone & Issues**:
+   - Resolve target base branch (defaults to repo default or `main`):
+     ```bash
+     DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo "main")
+     BASE_TARGET="${USER_BASE_BRANCH:-$DEFAULT_BRANCH}"
+     ```
    - Ensure a GitHub Milestone exists for unified human progress tracking:
      ```bash
      gh api repos/:owner/:repo/milestones -f title="<epic-title>" 2>/dev/null || true
@@ -41,6 +53,7 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      ```markdown
      ## 🎯 Context
      Part of Epic #<parent-number>
+     - **Base Target**: `${BASE_TARGET}`
      - **Milestone**: `<epic-title>`
      - **Integration Branch**: `epic/issue-<parent-number>-<slug>`
      - **Execution Mode**: ⚡ `Parallel` <!-- or 🔒 `Serial` -->
@@ -58,6 +71,7 @@ Decompose features or large issues into independent, vertically sliced micro-iss
    - Update parent Epic body with the phase checklist:
      ```markdown
      ## 🌿 Integration Branch & Milestone
+     - **Base Target**: `${BASE_TARGET}`
      - **Branch**: `epic/issue-<parent-number>-<slug>`
      - **Milestone**: `<epic-title>`
 
