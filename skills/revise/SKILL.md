@@ -21,6 +21,7 @@ Unlike a bug diagnosis or full rewrite, `/revise` is surgical: it addresses spec
   - If it is a standalone PR or branch, checkout the branch (`gh pr checkout <pr-number>`).
   - If the slice was already merged into an Epic branch, create a dedicated revision branch targeting the Epic branch (`fix/review-issue-<id>`).
 - **Living Test Synchronization**: When altering behavior or business rules based on review feedback, always update or add corresponding unit/integration tests to serve as living proof of the corrected behavior.
+- **Subagent Execution on Original Issue/PR**: Code review revisions belong to the original issue and PR—never create redundant issues for review feedback. Execute revisions inside an isolated executor subagent operating in the target worktree. This prevents build logs, test outputs, and compiler noise from polluting the orchestrator's conversation context while updating the original PR branch directly.
 - **Traceable Atomic Commits**: Commit changes with conventional messages referencing the review (e.g. `refactor(auth): address review feedback on token expiration` or `fix(order): align discount business rule with enterprise tier`), push to the PR branch, and update the PR with a summary of changes.
 
 ---
@@ -32,6 +33,9 @@ Accept one or more of:
 - PR number or URL: `/revise 14`
 - Optional inline instructions: `/revise 14 "rename DTO to CustomerPayload and add invalid domain test"`
 - If no argument is provided, detect the current active branch or open PR.
+
+> [!TIP]
+> When invoked within an orchestration or multi-task session, dispatch a dedicated executor subagent into the worktree to perform `/revise`. This keeps the parent session's context window clean while updating the original PR in place.
 
 **Query Target PR Details:**
 ```bash

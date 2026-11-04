@@ -39,7 +39,9 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
    - **Human-in-the-Loop Checkpoint**:
      - Notify developer with PR link and review summary:
        > "PR #<pr-number> ready for slice #<id>. Review in GitHub or run `/revise <pr-number>` if changes are desired."
-     - If adjustments are requested, run `/revise <pr-number> "<feedback>"` inside `.worktrees/issue-<id>`.
+     - If adjustments are requested, dispatch a **Revise Subagent** targeting the original issue/PR inside `.worktrees/issue-<id>`:
+       > "Apply review feedback to PR #<pr-number> (Issue #<id>) using `/revise <pr-number> "<feedback>"`. Operate directly in `.worktrees/issue-<id>`, apply corrections across domain logic and tests, commit to the original PR branch, and report back."
+     - The subagent pushes directly to the existing PR branch (no new issues created), preserving the Epic checklist and milestone counters.
    - Once approved (by developer or automated check), merge into the epic branch:
      ```bash
      gh pr merge <pr-number> --squash --delete-branch
