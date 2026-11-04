@@ -12,13 +12,33 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
 
 ## Workflow
 
-1. **Init Epic Branch & Milestone**:
+1. **Init Epic Branch, Milestone & Living Dashboard**:
    - Fetch parent issue and milestone:
      ```bash
      gh issue view <epic-number> --json title,body,milestone
      MILESTONE=$(gh issue view <epic-number> --json milestone -q .milestone.title 2>/dev/null || echo "")
      ```
    - Ensure integration branch `epic/issue-<epic-number>-<slug>` exists on remote (branched from `origin/main`), then fetch it locally.
+   - **Initialize Living Dashboard Comment** on parent Epic issue:
+     Post (or locate) a dedicated tracking comment with a Markdown status table. This comment will be updated live as slice PRs are created, revised, and merged:
+     ```bash
+     DASHBOARD_ID=$(gh api repos/:owner/:repo/issues/<epic-number>/comments \
+       --jq '.[] | select(.body | contains("## 📊 Epic Orchestration Dashboard")) | .id' | head -n 1)
+
+     if [ -z "$DASHBOARD_ID" ]; then
+       DASHBOARD_ID=$(gh issue comment <epic-number> --body "$(cat << 'EOF'
+     ## 📊 Epic Orchestration Dashboard
+
+     | Slice Issue | Mode | PR | Status | Branch |
+     | :--- | :--- | :--- | :--- | :--- |
+     | Initializing... | — | — | ⏳ Planning | — |
+
+     - **Integration Branch**: `epic/issue-<epic-number>-<slug>`
+     - **Milestone**: `${MILESTONE:-None}`
+     EOF
+     )" | grep -oE '[0-9]+$')
+     fi
+     ```
 
 2. **Identify Unblocked Slices**:
    - Parse parent Epic checklist (`- [ ]`). Slices whose dependencies are all `[x]` (or `None`) are unblocked.
@@ -35,16 +55,22 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      > "Implement issue `#<id>` using `/implement <id>`. You are in an isolated worktree on the feature branch. Submit PR targeting: `gh pr create --base epic/issue-<epic-number>-<slug> ${MILESTONE:+-m \"$MILESTONE\"}`."
 
 4. **Review, Sync & Merge (Asynchronous Loop)**:
-   - When an executor opens a PR: verify locally in `.worktrees/issue-<id>` (`make test`, `make lint`, diff review).
+   - When an executor opens a PR:
+     - Update the Dashboard comment row for `#<id>` to `👀 Ready for Review` with the PR link.
+     - Verify locally in `.worktrees/issue-<id>` (`make test`, `make lint`, diff review).
    - **Human-in-the-Loop Checkpoint**:
      - Notify developer with PR link and review summary:
        > "PR #<pr-number> ready for slice #<id>. Review in GitHub or run `/revise <pr-number>` if changes are desired."
-     - If adjustments are requested, dispatch a **Revise Subagent** targeting the original issue/PR inside `.worktrees/issue-<id>`:
+     - If adjustments are requested, update row to `🛠️ Revising` and dispatch a **Revise Subagent** targeting the original issue/PR inside `.worktrees/issue-<id>`:
        > "Apply review feedback to PR #<pr-number> (Issue #<id>) using `/revise <pr-number> "<feedback>"`. Operate directly in `.worktrees/issue-<id>`, apply corrections across domain logic and tests, commit to the original PR branch, and report back."
      - The subagent pushes directly to the existing PR branch (no new issues created), preserving the Epic checklist and milestone counters.
    - Once approved (by developer or automated check), merge into the epic branch:
      ```bash
      gh pr merge <pr-number> --squash --delete-branch
+     ```
+   - **Update Dashboard Table**: Patch comment row for `#<id>` to `🚀 MERGED`:
+     ```bash
+     gh api repos/:owner/:repo/issues/comments/$DASHBOARD_ID -X PATCH -f body="<updated-table>"
      ```
    - **Sync Active Sibling Worktrees**: If other parallel worktrees are active, rebase them against the updated epic branch:
      ```bash
@@ -62,6 +88,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      ```bash
      gh pr create --base main --head epic/issue-<epic-number>-<slug> ${MILESTONE:+-m "$MILESTONE"} --title "feat: <epic-title>" --body "Closes #<epic-number>"
      ```
+   - Update Dashboard comment marking all slices as `🚀 MERGED` and linking the final Release PR.
    - Once merged into `main`, CD triggers once for atomic deployment. Close Epic, delete remote epic branch, and close Milestone if complete:
      ```bash
      if [ -n "$MILESTONE" ]; then
