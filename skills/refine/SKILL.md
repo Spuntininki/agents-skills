@@ -23,7 +23,7 @@ Clarify architecture, trade-offs, and technical specs for an issue before writin
    - Present open decisions with concrete options (Option A vs Option B) and trade-offs. Recommend an option and wait for developer confirmation on architectural or scope decisions.
 
 4. **Enrich Issue Specification**:
-   - Update issue body (`gh issue edit <issue-number> --body ...` or comment) with confirmed specs:
+   - Post as a comment (`gh issue comment <issue-number> --body ...`) or append to the issue body to preserve the original issue description:
      ```markdown
      ## 📐 Technical Decisions & Architecture Plan
      - **Confirmed Decisions**: <What was decided and rationale>

@@ -25,8 +25,9 @@ Review Revisions: │    /revise    │─┤  /implement   │ ──> [PR Upda
 
 - **Peer Dialogue over Sycophancy**: Code review is a peer engineering dialogue, not mindless obedience. Critically evaluate suggestions against system invariants, concurrency safety, and performance. If a suggestion introduces risks, weakens error handling, or undoes an intentional design decision, articulate the rationale, explain the trade-off, and debate or propose alternatives before modifying code.
 - **Review-Driven Business & Behavioral Alignment**: Validated review feedback (business logic corrections, missing edge cases, invariant adjustments) must be fully addressed across domain models and tests.
+- **Audit Trail via Comments (Never Overwrite Body)**: Preserve the original PR and issue descriptions intact. Overwriting PR or issue bodies destroys the initial problem statement, architecture decisions, and reviewer guides. All revision discussions, agreed specs, and post-revision summaries must be appended as chronological **comments** (`gh pr comment` / `gh issue comment`), maintaining a clear and transparent audit trail.
 - **Single Implementation Engine**: Delegate all code modifications, linting, test verification, and commit execution to `/implement`. Do not maintain duplicate coding standards.
-- **Original PR & Worktree Target**: Revisions belong to the original PR and issue. Never create redundant issues. Work directly in the active worktree (`.worktrees/issue-<id>`) or provision an isolated worktree for the PR branch.
+- **Original PR & Worktree Target**: Revisions belong to the original PR and issue. Never create redundant issues or duplicate PRs. Work directly in the active worktree (`.worktrees/issue-<id>`) or provision an isolated worktree for the PR branch.
 
 ---
 
@@ -100,10 +101,10 @@ Synthesize the agreed-upon changes into a clear Revision Specification:
 ```
 
 Dispatch an executor subagent (or execute directly in current worktree) invoking `/implement`:
-> "Implement the Revision Specification above on branch `<head-branch>`. Adhere to clean code standards (no vanity tests, zero redundant comments, pinned dependencies), run project test suite, and commit atomically with `refactor(<scope>): address review feedback ...`."
+> "Implement the Revision Specification above on branch `<head-branch>`. Adhere to clean code standards (no vanity tests, zero redundant comments, pinned dependencies), run project test suite, and commit atomically with `refactor(<scope>): address review feedback ...`. Do NOT overwrite the PR body (`gh pr edit`) or recreate the PR (`gh pr create`)."
 
-### 4. Post Summary on PR & Cleanup
-Once `/implement` finishes verification and pushes to `<head-branch>`:
+### 4. Post Revision Comment on PR & Cleanup
+Never overwrite the PR or issue description. Post a chronological **comment** on the PR thread detailing the resolution:
 ```bash
 # Post summary comment resolving review items
 gh pr comment <pr-number> --body "$(cat << 'EOF'
@@ -116,6 +117,12 @@ Addressed review feedback:
 All tests and lint checks passing. Ready for re-review!
 EOF
 )"
+
+# Optionally post a reference comment on the parent issue if present
+ISSUE_NUM=$(gh pr view <pr-number> --json closingIssuesReferences -q '.closingIssuesReferences[0].number' 2>/dev/null || true)
+if [ -n "$ISSUE_NUM" ]; then
+  gh issue comment "$ISSUE_NUM" --body "Submitted revisions addressing review feedback on PR #<pr-number>." 2>/dev/null || true
+fi
 
 # If a temporary worktree was created dynamically for this revision, remove it
 cd - >/dev/null
