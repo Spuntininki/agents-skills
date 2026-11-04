@@ -33,13 +33,35 @@ Accept one or more of:
 - Optional inline instructions: `/revise 14 "rename DTO to CustomerPayload and add invalid domain test"`
 - If no argument is provided, detect the current active branch or open PR.
 
-Determine workspace location:
+**Query Target PR Details:**
 ```bash
-# Case A: Inside an active orchestrate worktree
-cd .worktrees/issue-<id>
+PR_DATA=$(gh pr view <pr-number> --json headRefName,baseRefName,state,number)
+HEAD_BRANCH=$(echo "$PR_DATA" | jq -r .headRefName)
+BASE_BRANCH=$(echo "$PR_DATA" | jq -r .baseRefName)
+PR_STATE=$(echo "$PR_DATA" | jq -r .state)
+```
 
-# Case B: Standalone PR / branch
-gh pr checkout <pr-number>
+**Deterministic Workspace Provisioning (Worktree-First):**
+Never dirty the root workspace. Always resolve to an isolated worktree directory:
+```bash
+# 1. Reuse existing worktree if still active
+if [ -d ".worktrees/issue-<id>" ]; then
+  cd .worktrees/issue-<id>
+elif [ -d ".worktrees/pr-<pr-number>" ]; then
+  cd .worktrees/pr-<pr-number>
+
+# 2. If PR is OPEN and worktree was pruned or absent: provision a fresh isolated worktree
+elif [ "$PR_STATE" = "OPEN" ]; then
+  git fetch origin "$HEAD_BRANCH"
+  git worktree add .worktrees/pr-<pr-number> "$HEAD_BRANCH"
+  cd .worktrees/pr-<pr-number>
+
+# 3. If PR is already MERGED into the Epic branch: branch from Epic base for follow-up fix
+elif [ "$PR_STATE" = "MERGED" ]; then
+  git fetch origin "$BASE_BRANCH"
+  git worktree add .worktrees/rev-pr-<pr-number> -b fix/rev-pr-<pr-number> origin/"$BASE_BRANCH"
+  cd .worktrees/rev-pr-<pr-number>
+fi
 ```
 
 ### 2. Ingest Review Feedback
@@ -78,10 +100,21 @@ Commit with a clear, conventional message describing the review resolution:
 ```bash
 git add <modified-files>
 git commit -m "refactor(<scope>): address review feedback regarding <summary>"
-git push origin <branch-name>
+
+# If working on an open PR: push directly to update the PR
+if [ "$PR_STATE" = "OPEN" ]; then
+  git push origin "$HEAD_BRANCH"
+
+# If PR was already merged into the Epic: push follow-up branch and open a quick revision PR
+elif [ "$PR_STATE" = "MERGED" ]; then
+  git push origin fix/rev-pr-<pr-number>
+  gh pr create --base "$BASE_BRANCH" --head fix/rev-pr-<pr-number> \
+    --title "fix: review adjustments for PR #<pr-number>" \
+    --body "Applies review adjustments requested on merged PR #<pr-number>."
+fi
 ```
 
-### 6. Notify Reviewer / Post Summary
+### 6. Notify Reviewer / Post Summary & Cleanup
 Post a concise summary comment on the PR detailing how each review item was resolved:
 ```bash
 gh pr comment <pr-number> --body "$(cat << 'EOF'
@@ -94,4 +127,8 @@ Addressed review feedback in commit `<commit-hash>`:
 All tests and lint checks passing. Ready for re-review!
 EOF
 )"
+
+# If a temporary worktree was created exclusively for this revision, remove it
+cd - >/dev/null
+git worktree remove .worktrees/pr-<pr-number> --force 2>/dev/null || true
 ```
