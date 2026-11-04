@@ -28,11 +28,14 @@ def detect_default_destination() -> Path:
     if env_home:
         return Path(env_home).expanduser().resolve()
 
+    if os.environ.get("CODEX_HOME"):
+        return TARGET_PRESETS["codex"]
+
     if (Path.home() / ".gemini").is_dir():
         return TARGET_PRESETS["gemini"]
     if (Path.home() / ".claude").is_dir():
         return TARGET_PRESETS["claude"]
-    if (Path.home() / ".codex").is_dir() or os.environ.get("CODEX_HOME"):
+    if (Path.home() / ".codex").is_dir():
         return TARGET_PRESETS["codex"]
 
     return TARGET_PRESETS["gemini"]
