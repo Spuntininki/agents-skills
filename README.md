@@ -12,6 +12,7 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 | `refine` | Interactively inspect an issue, align material technical decisions, and enrich implementation specifications. |
 | `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
 | `diagnose` | Perform Root Cause Analysis (RCA) via isolated subagent, create GitHub bug issue(s), and register in Epics for orchestration. |
+| `revise` | Address code review feedback and requested changes on an open PR or branch with surgical fixes and atomic verification. |
 | `english-practice` | Maintain language practice with concise, non-disruptive inline corrections while continuing technical tasks. |
 
 ---
@@ -72,6 +73,7 @@ Trigger skills via slash commands (`/` or `$`, depending on your harness UI):
 /orchestrate https://github.com/OWNER/REPO/issues/18
 /refine https://github.com/OWNER/REPO/issues/12
 /implement https://github.com/OWNER/REPO/issues/12
+/revise 14 "Rename CustomerDTO and add edge case test for null email"
 /diagnose "Worker fails with deadlock when processing batch refund events" --epic 18
 /english-practice Please correct my English while we work.
 ```

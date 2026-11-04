@@ -36,8 +36,11 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
 
 4. **Review, Sync & Merge (Asynchronous Loop)**:
    - When an executor opens a PR: verify locally in `.worktrees/issue-<id>` (`make test`, `make lint`, diff review).
-   - If fixes are needed, message the executor in that worktree for atomic revisions.
-   - Once approved, merge into the epic branch:
+   - **Human-in-the-Loop Checkpoint**:
+     - Notify developer with PR link and review summary:
+       > "PR #<pr-number> ready for slice #<id>. Review in GitHub or run `/revise <pr-number>` if changes are desired."
+     - If adjustments are requested, run `/revise <pr-number> "<feedback>"` inside `.worktrees/issue-<id>`.
+   - Once approved (by developer or automated check), merge into the epic branch:
      ```bash
      gh pr merge <pr-number> --squash --delete-branch
      ```
