@@ -9,7 +9,7 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 | `explore` | Onboard onto unfamiliar codebases with a guided cognitive reading path, architectural map, and Git churn hotspots. |
 | `slice` | Decompose complex features into independent, vertically sliced micro-issues with parallel/serial execution modes. |
 | `orchestrate` | Supervise multi-issue epics using isolated Git worktrees, concurrent subagents for parallel slices, and an Epic Integration Branch. |
-| `refine` | Interactively inspect an issue, align material technical decisions, and enrich implementation specifications. |
+| `refine` | Interactively inspect an issue or Epic, align material technical decisions, and enrich implementation specifications. |
 | `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
 | `diagnose` | Perform Root Cause Analysis (RCA) via isolated subagent, create GitHub bug issue(s), and register in Epics for orchestration. |
 | `revise` | Evaluate code review feedback, debate technical trade-offs, and delegate surgical changes to /implement on existing PRs. |
@@ -29,9 +29,10 @@ flowchart TD
 
     subgraph Features ["🚀 Feature Delivery"]
         C["Feature Idea or Large Issue"] -->|/slice| D["Epic & Micro-Issues"]
-        D -->|Refine Trade-offs| E["/refine"]
-        E -->|Technical Spec Ready| F["/implement"]
-        D -->|Multi-Issue Epic| G["/orchestrate"]
+        D -->|Refine Epic or Standalone Issue| E["/refine"]
+        E -->|Epic Slices Aligned| G["/orchestrate"]
+        E -->|Single Issue Ready| F["/implement"]
+        D -->|Direct Execution| G
         G -->|Worktrees & Subagents| F
         F -->|Opens PR with Reviewer Guide| H["Code Review"]
         H -->|Reviewer Feedback| I["/revise"]
@@ -101,8 +102,9 @@ Trigger skills via slash commands (`/` or `$`, depending on your harness UI):
 /explore /path/to/unfamiliar-repo
 /slice Add user notification preference and email alerts
 /slice https://github.com/OWNER/REPO/issues/12
+/refine https://github.com/OWNER/REPO/issues/18  # Refine entire Epic & child issues
+/refine https://github.com/OWNER/REPO/issues/12  # Refine a standalone issue
 /orchestrate https://github.com/OWNER/REPO/issues/18
-/refine https://github.com/OWNER/REPO/issues/12
 /implement https://github.com/OWNER/REPO/issues/12
 /revise 14 "Rename CustomerDTO and add edge case test for null email"
 /diagnose "Worker fails with deadlock when processing batch refund events" --epic 18
