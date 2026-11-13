@@ -12,6 +12,7 @@ Each skill is a self-contained folder with a `SKILL.md` entrypoint, executable s
 | `refine` | Interactively inspect an issue or Epic, align material technical decisions, and enrich implementation specifications. |
 | `implement` | Implement a GitHub issue end-to-end with clean code, verified dependencies, real tests, and a human-centric PR guide. |
 | `diagnose` | Perform Root Cause Analysis (RCA) via isolated subagent, create GitHub bug issue(s), and register in Epics for orchestration. |
+| `refactor` | Surgically eliminate code smells and technical debt using Refactoring Guru techniques under invariant test safety. |
 | `revise` | Evaluate code review feedback, debate technical trade-offs, and delegate surgical changes to /implement on existing PRs. |
 | `english-practice` | Maintain language practice with concise, non-disruptive inline corrections while continuing technical tasks. |
 
@@ -44,6 +45,11 @@ flowchart TD
         K["Bug Report or Failing Test"] -->|/diagnose| L["Isolated RCA Subagent + Repro Test"]
         L -->|Creates Bug Issue| D
         L -->|Direct Fix| F
+    end
+
+    subgraph Debt ["🧹 Debt & Maintenance"]
+        M["Code Smell or Tech Debt"] -->|/refactor| N["Characterization Test Harness"]
+        N -->|Prescriptive Micro-Steps| O["Invariant Verified Diff"]
     end
 ```
 
@@ -106,6 +112,7 @@ Trigger skills via slash commands (`/` or `$`, depending on your harness UI):
 /refine https://github.com/OWNER/REPO/issues/12  # Refine a standalone issue
 /orchestrate https://github.com/OWNER/REPO/issues/18
 /implement https://github.com/OWNER/REPO/issues/12
+/refactor src/services/order.ts:processPayment "eliminate Long Method and Data Clumps"
 /revise 14 "Rename CustomerDTO and add edge case test for null email"
 /diagnose "Worker fails with deadlock when processing batch refund events" --epic 18
 /english-practice Please correct my English while we work.
