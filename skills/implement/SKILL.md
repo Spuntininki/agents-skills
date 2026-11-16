@@ -30,7 +30,16 @@ Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
        ```
 
 3. **Standards**:
-   - **Zero Redundant Comments**: Code must be self-documenting. Reserve comments strictly for non-obvious business rules or safety constraints.
+   - **Zero Redundant Comments**: Code must be self-documenting. Reserve inline comments strictly for non-obvious business rules or safety constraints.
+   - **Public API Documentation (Docstrings/Contract Docs)**:
+     - Document only public interfaces, exported functions/classes, and boundary contracts (SDKs, services, APIs) using the idiomatic standard of the language (e.g., JSDoc/TSDoc, PEP 257 docstrings, Go doc comments, Rustdoc).
+     - Explain the *contract*: intent/purpose, invariants, side effects, and thrown errors/exceptions.
+     - Never restate types or write tautological boilerplate (e.g., avoid `def get_user(id): """Gets the user by id."""`).
+     - Do not document internal private functions/helpers unless there is a non-obvious business rule, safety constraint, or complex algorithm.
+   - **Test Strategy (Pyramid & Narrow Integration)**:
+     - **Domain & Business Logic**: Fast, pure, in-memory unit tests with zero I/O.
+     - **Adapters & Boundaries (DB, APIs, Queues)**: Narrow integration tests verifying real persistence queries, serialization, and contract handling against ephemeral dependencies (e.g., testcontainers, isolated schemas, wiremock). Avoid tautological mock-of-a-mock tests.
+     - **Edge Cases**: Push combinatorial edge cases down to the lowest feasible layer (unit/narrow integration) rather than ballooning slow E2E suites.
    - **Meaningful Tests (No Vanity Tests)**: Never write tautological tests that test nothing. Cover real edge cases, state invariants, and failure paths. Refactor existing test tables rather than appending redundant tests; eliminate dead test code ruthlessly.
    - **Architecture & Boundaries**: Follow the repository's native architectural style (e.g. Hexagonal, Clean, MVC, Feature-based).
    - **Pinned & Verified Dependencies**: When introducing any new library, verify its real, official, and stable release (via package manager CLI or registry query). Pin the exact verified version in the installation/manifest file (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`). Never hallucinate version numbers or use floating/unpinned tags (`*`, `latest`).
