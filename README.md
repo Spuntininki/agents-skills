@@ -122,6 +122,26 @@ Skills are also selected automatically by the agent's router when a user prompt 
 
 ---
 
+## Label Taxonomy & Preview Gates
+
+Skills use standard GitHub labels with scoped prefixes (`prefix:name`) to coordinate execution and human-in-the-loop gates:
+
+| Namespace | Label | Purpose |
+| :--- | :--- | :--- |
+| **Preview Gate** | `needs:preview` | **Halts `/implement` before PR creation** so developer can build & validate frontend locally. |
+| **Area** | `area:frontend`, `area:backend`, `area:infra` | Technical layer identified from file boundaries. |
+| **Type** | `type:feat`, `type:bug`, `type:refactor`, `type:epic`, `type:chore` | Semantic categorization of issues and PRs. |
+| **Execution** | `exec:parallel`, `exec:serial` | Orchestration mode for concurrent worktrees vs sequential slices. |
+
+To bootstrap or sync these standard labels on any GitHub repository:
+
+```bash
+./scripts/setup-labels.sh               # Current repository
+./scripts/setup-labels.sh -R owner/repo # Target repository
+```
+
+---
+
 ## Contributing & Adding Skills
 
 Create a new folder under `skills/<name>/SKILL.md` with YAML frontmatter:

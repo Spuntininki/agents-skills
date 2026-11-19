@@ -63,9 +63,11 @@ if [ -n "<epic-id>" ]; then
   MILESTONE=$(gh issue view <epic-id> --json milestone -q .milestone.title 2>/dev/null || echo "")
 fi
 
+# Labels: type:bug, exec:<parallel|serial>, area:<frontend|backend|infra>
+# Add "needs:preview" if the bug involves visual UI flaws requiring local verification
 gh issue create \
   --title "fix: <concise, descriptive bug title>" \
-  --label "bug" \
+  --label "type:bug,exec:<parallel|serial>,area:<frontend|backend|infra>${IS_PREVIEW:+,needs:preview}" \
   ${MILESTONE:+-m "$MILESTONE"} \
   --body "$(cat << 'EOF'
 ## 🎯 Observed Symptom
@@ -103,7 +105,7 @@ EOF
     ```bash
     gh issue create \
       --title "epic: resolve <incident-name-or-cluster>" \
-      --label "epic" \
+      --label "type:epic" \
       --body "<Checklist with all diagnosed bug issues>"
     ```
 

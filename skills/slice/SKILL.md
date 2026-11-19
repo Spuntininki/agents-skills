@@ -32,7 +32,11 @@ Decompose features or large issues into independent, vertically sliced micro-iss
 
 2. **Propose Execution Graph**:
    - Group proposed slices into **Phases** (Phase 1: Foundation 🔒, Phase 2: Independent Features ⚡, Phase 3: Wiring 🔒).
-   - Specify: Title (`type(scope): summary`), Mode (`Parallel ⚡` vs `Serial 🔒`), Dependencies (`#prev` or `None`), Target File Boundaries, Scope (IN/OUT), and Acceptance Criteria.
+   - Specify for each slice: Title (`type(scope): summary`), Mode (`Parallel ⚡` vs `Serial 🔒`), Dependencies (`#prev` or `None`), Target File Boundaries, Scope (IN/OUT), Acceptance Criteria, and **Structured Labels**:
+     - `type:*` (`type:feat`, `type:chore`, `type:refactor`)
+     - `exec:*` (`exec:parallel` or `exec:serial`)
+     - `area:*` (`area:frontend`, `area:backend`, `area:infra`)
+     - `needs:preview`: Flag for slices modifying UI components, views, styles, or user-facing interactions so developer can validate locally before PR.
    - Confirm breakdown with developer before creating issues.
 
 3. **Create Milestone & Issues**:
@@ -47,10 +51,15 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      ```
    - If parent Epic issue does not exist, create it with milestone association:
      ```bash
-     gh issue create --title "feat(scope): <title>" -m "<epic-title>" ...
+     gh issue create --title "feat(scope): <title>" --label "type:epic" -m "<epic-title>" ...
      ```
-   - Create child issues with `gh issue create -m "<epic-title>"`:
-     ```markdown
+   - Create child issues with `gh issue create`:
+     ```bash
+     gh issue create \
+       --title "<type>(<scope>): <title>" \
+       --label "type:feat,exec:<parallel|serial>,area:<frontend|backend|infra>${IS_PREVIEW:+,needs:preview}" \
+       -m "<epic-title>" \
+       --body "$(cat << 'EOF'
      ## 🎯 Context
      Part of Epic #<parent-number>
      - **Base Target**: `${BASE_TARGET}`
@@ -59,6 +68,7 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      - **Execution Mode**: ⚡ `Parallel` <!-- or 🔒 `Serial` -->
      - **Dependencies**: #<previous> <!-- or "None" -->
      - **File Boundaries**: `<paths-touched>`
+     - **Labels**: `type:feat`, `area:<frontend|backend>`, `exec:<parallel|serial>` [, `needs:preview`]
 
      ## 📦 Scope
      - **IN Scope**: <Cohesive capability>
@@ -67,6 +77,8 @@ Decompose features or large issues into independent, vertically sliced micro-iss
      ## 🧪 Verification & Acceptance Criteria
      - [ ] Unit / Integration tests pass verifying this slice independently.
      - [ ] <Concrete criterion>
+     EOF
+     )"
      ```
    - Update parent Epic body with the phase checklist:
      ```markdown

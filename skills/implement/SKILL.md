@@ -9,12 +9,20 @@ description: >-
 
 Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
 
+## Invocation
+```text
+/implement <issue-number> [--preview]
+```
+- `<issue-number>`: Issue number or URL to implement.
+- `--preview`: Explicitly enables the local visual preview checkpoint before pushing and opening PR (also activated automatically if the issue has the `needs:preview` label).
+
 ## Workflow
 
 1. **Context**: 
-   - Fetch issue via `gh issue view <issue-number>`.
+   - Fetch issue via `gh issue view <issue-number> --json title,body,labels,milestone`.
    - Inspect `AGENTS.md` and repo architecture rules.
    - **Detect Target Integration Base**: Check if the issue body specifies an integration branch (e.g., `- **Integration Branch**: epic/issue-<epic-number>-<slug>`). If present, PR target base is that integration branch; otherwise, target `main`.
+   - **Detect Preview Mode**: Check if `--preview` was provided in the invocation OR if the issue has the `needs:preview` label. If present, flag that **Step 6 (Local Preview Checkpoint)** must be executed before creating the PR.
 
 2. **Branch & Workspace Setup**:
    - **If inside an isolated worktree** (e.g. `.worktrees/issue-<number>` dispatched by `/orchestrate`): The feature branch is already provisioned and checked out. Work directly on the current branch.
@@ -51,7 +59,20 @@ Implement a GitHub issue end-to-end and submit a reviewer-optimized PR.
 
 5. **Verify**: Ensure project test suite passes (with race/concurrency checks enabled) and build succeeds.
 
-6. **Pull Request**:
+6. **Local Preview Checkpoint (Conditional on `needs:preview` or `--preview`)**:
+   - If `needs:preview` is active:
+     - Ensure the project builds cleanly.
+     - Present clear, developer-friendly instructions in chat:
+       - **Branch**: name of the branch currently checked out (`git branch --show-current`).
+       - **Dev Command**: command to run locally (e.g. `npm run dev`, `pnpm dev`, `yarn dev`, etc.).
+       - **Target Areas**: list the specific UI components, pages, or routes modified.
+       - **Validation Guide**: what key visual behaviors, states, or responsive flows to check.
+     - **Pause and await developer confirmation**:
+       - Prompt the developer: *"Local build ready for visual inspection. Please test the frontend locally. Ready to proceed with PR creation, or are adjustments needed?"*
+       - If developer requests adjustments: iterate on changes, re-run tests/build, and present the checkpoint again.
+       - **Only proceed to Step 7 once the developer explicitly confirms approval.**
+
+7. **Pull Request**:
    - Push branch to remote.
    - Inherit milestone if the issue has one:
      ```bash
@@ -84,6 +105,7 @@ Closes #<issue-number>
 ## 🧪 Verification & Proof
 - [x] Test suite and race checks passed.
 - [x] Build succeeded.
+- [x] Local preview & visual validation verified (if `needs:preview` / `--preview`).
 - [x] Verification output:
   ```
   <sample test output or CLI response>

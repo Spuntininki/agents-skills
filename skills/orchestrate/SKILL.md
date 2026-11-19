@@ -71,6 +71,7 @@ Supervise and execute multi-issue epics end-to-end against an **Epic Integration
      ```
    - Dispatch executor subagent into `.worktrees/issue-<id>`:
      > "Implement issue `#<id>` using `/implement <id>`. You are in an isolated worktree on the feature branch. Submit PR targeting: `gh pr create --base epic/issue-<epic-number>-<slug> ${MILESTONE:+-m \"$MILESTONE\"}`."
+   - **Visual Preview Awareness**: If slice `#<id>` has the `needs:preview` label, `/implement` inside the subagent will halt at its local preview checkpoint after build/tests pass. Facilitate this checkpoint with the developer so they can validate the front-end before the subagent proceeds to create the PR.
 
 4. **Review, Sync & Merge (Asynchronous Loop)**:
    - When an executor opens a PR:

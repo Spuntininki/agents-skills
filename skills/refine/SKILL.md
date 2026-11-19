@@ -65,6 +65,10 @@ Clarify architecture, trade-offs, and technical specs for an issue or an entire 
      - **Files to Modify / Create**: [`path`](path)
      - **Test Strategy & Edge Cases**: <Concrete verification criteria>
      ```
+   - **Synchronize Labels & Preview Gates**: For slices modifying UI components or styling, confirm with developer whether local validation is desired before PR. Add or remove `needs:preview` accordingly:
+     ```bash
+     gh issue edit <child-id> --add-label "needs:preview"
+     ```
 
 5. **Next Step**: Confirm readiness and recommend `/orchestrate <epic-number>`.
 
@@ -96,6 +100,10 @@ Clarify architecture, trade-offs, and technical specs for an issue or an entire 
      - **Tests**: <Edge cases and integration flows>
      - [ ] <Concrete acceptance criterion 1>
      - [ ] <Concrete acceptance criterion 2>
+     ```
+   - **Synchronize Preview Label**: If this issue touches UI components and developer desires a visual checkpoint before PR, ensure `needs:preview` is set:
+     ```bash
+     gh issue edit <issue-number> --add-label "needs:preview"
      ```
 
 5. **Next Step**: Confirm readiness and recommend `/implement <issue-number>`.
